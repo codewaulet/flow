@@ -14,6 +14,7 @@ export interface FlowSettings {
   flickerAlpha: boolean;
   showTrails: boolean;
   particleCount: number;
+  panelMode: 'slide' | 'center';
 }
 
 export interface Particle {
@@ -56,39 +57,14 @@ export interface AudioState {
   volumeLFO: any | null;
 }
 
-export interface ControlPanelProps {
-  settings: FlowSettings;
-  onSettingsChange: (settings: Partial<FlowSettings>) => void;
-  onSaveSettings: () => void;
-  showUI: boolean;
-  onToggleUI: () => void;
-}
+// Типы для жестов
+export type GestureType = 'swipe' | 'pinch' | 'tap' | 'longPress';
+export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 
-export interface ModeSelectorProps {
-  mode: FlowMode;
-  subMode: SubMode;
-  onModeChange: (mode: FlowMode) => void;
-  onSubModeChange: (subMode: SubMode) => void;
-}
-
-export interface SoundSelectorProps {
-  sound: SoundType;
-  onSoundChange: (sound: SoundType) => void;
-}
-
-export interface FlickerSettingsProps {
-  flickerSize: boolean;
-  flickerAlpha: boolean;
-  onFlickerChange: (key: 'flickerSize' | 'flickerAlpha', value: boolean) => void;
-}
-
-export interface SpeedSettingsProps {
-  baseSpeed: number;
-  onSpeedChange: (speed: number) => void;
-  onSave: () => void;
-}
-
-export interface PerformanceSettingsProps {
-  particleCount: number;
-  onParticleCountChange: (count: number) => void;
+export interface GestureEvent {
+  type: GestureType;
+  direction?: SwipeDirection;
+  velocity?: number;
+  scale?: number;
+  position?: { x: number; y: number };
 }

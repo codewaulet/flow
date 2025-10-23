@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Particle, FlowSettings, SubMode } from '../types';
+import { AdvancedParticleSystem } from './AdvancedParticleSystem';
 
 export class ParticleSystem {
   private particles: Particle[] = [];
@@ -7,10 +8,12 @@ export class ParticleSystem {
   private trailSystem: THREE.LineSegments | null = null;
   private scene: THREE.Scene;
   private settings: FlowSettings;
+  private advancedSystem: AdvancedParticleSystem;
 
   constructor(scene: THREE.Scene, settings: FlowSettings) {
     this.scene = scene;
     this.settings = settings;
+    this.advancedSystem = new AdvancedParticleSystem(scene, settings);
     this.createParticleSystem();
   }
 
@@ -255,6 +258,10 @@ export class ParticleSystem {
   }
 
   public updateParticles(delta: number, time: number, flowLevel: number, currentSpeed: number): void {
+    // Используем новую продвинутую систему
+    this.advancedSystem.update(delta);
+    
+    // Обновляем старую систему для совместимости
     if (!this.particleSystem) return;
 
     const positions = this.particleSystem.geometry.attributes.position.array as Float32Array;
@@ -479,6 +486,7 @@ export class ParticleSystem {
 
   public updateSettings(newSettings: FlowSettings): void {
     this.settings = newSettings;
+    this.advancedSystem.updateSettings(newSettings);
     
     // Пересоздаем систему частиц если изменилось количество
     if (this.particles.length !== newSettings.particleCount) {
@@ -488,6 +496,8 @@ export class ParticleSystem {
   }
 
   public dispose(): void {
+    this.advancedSystem.dispose();
+    
     if (this.particleSystem) {
       this.scene.remove(this.particleSystem);
       this.particleSystem.geometry.dispose();

@@ -13,9 +13,8 @@ interface UseThreeJSProps {
 export const useThreeJS = ({
   containerRef,
   gameRef,
-  particleSystemRef,
-  settings
-}: UseThreeJSProps) => {
+  particleSystemRef
+}: Omit<UseThreeJSProps, 'settings'>) => {
   const isInitializedRef = useRef(false);
 
   useEffect(() => {
@@ -59,8 +58,18 @@ export const useThreeJS = ({
     rimLight2.position.set(-40, -20, -30);
     game.scene.add(rimLight2);
 
-    // Создаем систему частиц
-    particleSystemRef.current = new ParticleSystem(game.scene, settings);
+    // Создаем систему частиц с дефолтными настройками
+    particleSystemRef.current = new ParticleSystem(game.scene, {
+      mode: 'smooth',
+      subMode: 'spiral',
+      baseSpeed: 1.0,
+      sound: 'theta',
+      flickerSize: false,
+      flickerAlpha: false,
+      showTrails: false,
+      particleCount: 1000,
+      panelMode: 'slide'
+    });
 
     isInitializedRef.current = true;
 
@@ -82,5 +91,5 @@ export const useThreeJS = ({
       
       isInitializedRef.current = false;
     };
-  }, [containerRef, gameRef, particleSystemRef, settings]);
+  }, [containerRef, gameRef, particleSystemRef]);
 };

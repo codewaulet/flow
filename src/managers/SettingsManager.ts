@@ -25,7 +25,8 @@ export class SettingsManager {
       flickerSize: false,
       flickerAlpha: false,
       showTrails: false,
-      particleCount: 1000
+      particleCount: 1000,
+      panelMode: 'slide'
     };
   }
 

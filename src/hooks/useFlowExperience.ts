@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FlowSettings, GameState } from '../types';
-import { SettingsManager } from '../managers/SettingsManager';
+import { GameState } from '../types';
 import { AudioManager } from '../managers/AudioManager';
 import { ParticleSystem } from '../managers/ParticleSystem';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 export const useFlowExperience = () => {
-  const settingsManager = SettingsManager.getInstance();
   const audioManager = AudioManager.getInstance();
   
-  const [settings, setSettings] = useState<FlowSettings>(settingsManager.getSettings());
+  // Получаем настройки и методы из Zustand с атомарными селекторами
+  const baseSpeed = useSettingsStore((state) => state.baseSpeed);
+  const sound = useSettingsStore((state) => state.sound);
+  
   const [showIntro, setShowIntro] = useState(true);
   const [audioReady, setAudioReady] = useState(false);
-  const [showUI, setShowUI] = useState(true);
   const [currentSpeed, setCurrentSpeed] = useState(1.0);
   const [targetSpeed, setTargetSpeed] = useState(1.0);
   
@@ -35,25 +36,8 @@ export const useFlowExperience = () => {
   const particleSystemRef = useRef<ParticleSystem | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Обновляем настройки
-  const updateSettings = useCallback((newSettings: Partial<FlowSettings>) => {
-    const updatedSettings = { ...settings, ...newSettings };
-    setSettings(updatedSettings);
-    settingsManager.updateSettings(updatedSettings);
-    
-    // Обновляем систему частиц если нужно
-    if (particleSystemRef.current) {
-      particleSystemRef.current.updateSettings(updatedSettings);
-    }
-  }, [settings, settingsManager]);
-
-  // Сохраняем настройки
-  const saveSettings = useCallback(() => {
-    settingsManager.saveSettings();
-  }, [settingsManager]);
-
   // Переключаем звук
-  const switchSound = useCallback((soundType: FlowSettings['sound']) => {
+  const switchSound = useCallback((soundType: typeof sound) => {
     if (audioReady) {
       audioManager.switchSound(soundType);
     }
@@ -65,8 +49,8 @@ export const useFlowExperience = () => {
   }, []);
 
   const handleAccelerationEnd = useCallback(() => {
-    setTargetSpeed(settings.baseSpeed);
-  }, [settings.baseSpeed]);
+    setTargetSpeed(baseSpeed);
+  }, [baseSpeed]);
 
   // Инициализация аудио
   const initAudio = useCallback(async () => {
@@ -89,15 +73,10 @@ export const useFlowExperience = () => {
     await initAudio();
   }, [initAudio]);
 
-  // Переключение UI
-  const toggleUI = useCallback(() => {
-    setShowUI(prev => !prev);
-  }, []);
-
   // Обновляем звук в зависимости от скорости
   const updateSoundWithSpeed = useCallback(() => {
-    audioManager.updateSoundWithSpeed(currentSpeed, settings.sound);
-  }, [currentSpeed, settings.sound, audioManager]);
+    audioManager.updateSoundWithSpeed(currentSpeed, sound);
+  }, [currentSpeed, sound, audioManager]);
 
   // Запускаем гармонические тона
   const triggerHarmonicTone = useCallback(() => {
@@ -107,27 +86,22 @@ export const useFlowExperience = () => {
   // Переключаем звук при смене настроек
   useEffect(() => {
     if (audioReady) {
-      switchSound(settings.sound);
+      switchSound(sound);
     }
-  }, [settings.sound, audioReady, switchSound]);
+  }, [sound, audioReady, switchSound]);
 
   return {
-    settings,
     showIntro,
     audioReady,
-    showUI,
     currentSpeed,
     targetSpeed,
     gameRef,
     particleSystemRef,
     containerRef,
-    updateSettings,
-    saveSettings,
     switchSound,
     handleAccelerationStart,
     handleAccelerationEnd,
     startExperience,
-    toggleUI,
     updateSoundWithSpeed,
     triggerHarmonicTone,
     setCurrentSpeed,

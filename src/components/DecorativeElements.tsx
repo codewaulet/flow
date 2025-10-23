@@ -1,10 +1,13 @@
 import React from 'react';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface DecorativeElementsProps {
   showIntro: boolean;
 }
 
 const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <>
       {/* Vignette */}
@@ -42,11 +45,8 @@ const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) =>
       />
       
       {/* Mobile hint */}
-      {!showIntro && (
-        <div className="absolute bottom-4 left-4 text-xs sm:hidden" style={{ 
-          color: 'rgba(30, 136, 229, 0.4)',
-          display: window.innerWidth < 640 ? 'block' : 'none'
-        }}>
+      {!showIntro && isMobile && (
+        <div className="absolute bottom-4 left-4 text-xs">
           <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
             <div className="text-center">
               <div className="text-lg mb-1">👆</div>
@@ -57,10 +57,8 @@ const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) =>
       )}
 
       {/* Desktop hint */}
-      {!showIntro && (
-        <div className="absolute bottom-4 left-4 text-xs hidden sm:block" style={{ 
-          color: 'rgba(30, 136, 229, 0.4)'
-        }}>
+      {!showIntro && !isMobile && (
+        <div className="absolute bottom-4 left-4 text-xs">
           <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
             <div>Нажмите <kbd className="bg-white/20 px-1 rounded">O</kbd> для управления</div>
           </div>

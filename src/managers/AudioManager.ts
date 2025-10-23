@@ -33,6 +33,11 @@ export class AudioManager {
     if (this.isInitialized) return;
 
     try {
+      // Проверяем и возобновляем suspended контекст
+      if (Tone.context.state === 'suspended') {
+        await Tone.context.resume();
+      }
+      
       await Tone.start();
       await this.createAudioNodes();
       this.isInitialized = true;
