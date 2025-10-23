@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #020818;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .test-button {
+            background: #ff0000;
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #ff6666;
+        }
+        .debug-info {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест UI</h1>
+    
+    <div class="debug-info">
+        <h3>Отладочная информация:</h3>
+        <p>Если вы видите эту страницу, то сервер работает!</p>
+        <p>Время: <span id="time"></span></p>
+        <p>Клики: <span id="clicks">0</span></p>
+    </div>
+    
+    <button class="test-button" onclick="testClick()">🔴 Тестовая кнопка</button>
+    <button class="test-button" onclick="testAlert()">🚨 Тест Alert</button>
+    <button class="test-button" onclick="testConsole()">📝 Тест Console</button>
+    
+    <div class="debug-info">
+        <h3>Инструкции:</h3>
+        <ol>
+            <li>Кликните по красной кнопке - должно увеличиться число кликов</li>
+            <li>Кликните "Тест Alert" - должно появиться всплывающее окно</li>
+            <li>Кликните "Тест Console" - откройте консоль браузера (F12) и проверьте логи</li>
+            <li>Если всё работает, переходите к <a href="http://localhost:3000" style="color: #00e5cc;">основному приложению</a></li>
+        </ol>
+    </div>
+    
+    <script>
+        let clickCount = 0;
+        
+        function testClick() {
+            clickCount++;
+            document.getElementById('clicks').textContent = clickCount;
+            console.log('✅ Клик зарегистрирован! Кликов:', clickCount);
+        }
+        
+        function testAlert() {
+            alert('🎉 Alert работает! UI функционирует нормально.');
+            console.log('✅ Alert показан успешно');
+        }
+        
+        function testConsole() {
+            console.log('🔄 Тест консоли');
+            console.log('✅ Консоль работает!');
+            console.log('📊 Текущее время:', new Date().toLocaleString());
+            console.log('🖱️ Количество кликов:', clickCount);
+        }
+        
+        // Обновляем время каждую секунду
+        setInterval(() => {
+            document.getElementById('time').textContent = new Date().toLocaleString();
+        }, 1000);
+        
+        console.log('🚀 Тестовая страница загружена');
+        console.log('📱 Если вы видите это сообщение, JavaScript работает');
+    </script>
+</body>
+</html>
