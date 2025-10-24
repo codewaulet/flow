@@ -29,17 +29,19 @@ export const AudioControls: React.FC = () => {
       style={{
         position: 'fixed',
         top: spacing[5],
-        right: spacing[5],
+        left: '50%',
+        transform: 'translateX(-50%)',
         display: 'flex',
-        gap: spacing[2],
+        gap: mobile ? spacing[1] : spacing[2],
         alignItems: 'center',
-        flexWrap: mobile ? 'wrap' : 'nowrap',
-        maxWidth: mobile ? 'calc(100vw - 2.5rem)' : 'auto',
-        padding: spacing[2],
+        flexWrap: 'nowrap',
+        maxWidth: mobile ? 'calc(100vw - 1rem)' : 'auto',
+        padding: mobile ? `${spacing[1]} ${spacing[2]}` : `${spacing[2]} ${spacing[3]}`,
         ...glassmorphism,
-        borderRadius: mobile ? '16px' : '50px',
+        borderRadius: mobile ? '20px' : '50px',
         zIndex: 98,
         pointerEvents: 'auto',
+        overflow: 'hidden',
       }}
     >
       {presets.map((preset) => (
@@ -49,7 +51,7 @@ export const AudioControls: React.FC = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           style={{
-            padding: mobile ? `${spacing[2]} ${spacing[3]}` : `${spacing[2]} ${spacing[4]}`,
+            padding: mobile ? `${spacing[1]} ${spacing[2]}` : `${spacing[2]} ${spacing[4]}`,
             borderRadius: '50px',
             background: audioPreset === preset.id 
               ? 'rgba(167, 139, 250, 0.3)' 
@@ -66,6 +68,7 @@ export const AudioControls: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: spacing[1],
+            minWidth: mobile ? 'auto' : 'auto',
           }}
         >
           <span>{preset.icon}</span>
@@ -79,18 +82,19 @@ export const AudioControls: React.FC = () => {
         whileHover={{ scale: 1.05, rotate: 90 }}
         whileTap={{ scale: 0.95 }}
         style={{
-          width: mobile ? '2.5rem' : '2.75rem',
-          height: mobile ? '2.5rem' : '2.75rem',
+          width: mobile ? '2rem' : '2.75rem',
+          height: mobile ? '2rem' : '2.75rem',
           borderRadius: '50%',
           background: 'rgba(255, 255, 255, 0.1)',
           border: 'none',
           color: colors.text.primary,
-          fontSize: typography.fontSize.lg,
+          fontSize: mobile ? typography.fontSize.sm : typography.fontSize.lg,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          flexShrink: 0,
         }}
         title="Settings"
       >

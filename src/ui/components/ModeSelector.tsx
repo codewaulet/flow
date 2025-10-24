@@ -9,12 +9,12 @@ import { colors, spacing, glassmorphism } from '../theme/tokens';
 import { isMobile } from '../../utils/device';
 
 const modes: { id: VisualMode; name: string; icon: string }[] = [
-  { id: 'breathe', name: 'Universe', icon: '🌌' },
-  { id: 'toroid', name: 'Toroid', icon: '⭕' },
-  { id: 'weaver', name: 'Weaver', icon: '🕸️' },
-  { id: 'starfield', name: 'Starfield', icon: '✨' },
-  { id: 'matrix', name: 'Matrix', icon: '💚' },
-  { id: 'orbs', name: 'Crawl', icon: '⭐' },
+  { id: 'breathe', name: 'Черная дыра', icon: '🕳️' },
+  { id: 'toroid', name: 'Тороид', icon: '⭕' },
+  { id: 'weaver', name: 'Паутина', icon: '🕸️' },
+  { id: 'starfield', name: 'Звездное поле', icon: '✨' },
+  { id: 'matrix', name: 'Матрица', icon: '💚' },
+  { id: 'orbs', name: 'Ползание', icon: '⭐' },
 ];
 
 export const ModeSelector: React.FC = () => {

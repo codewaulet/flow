@@ -5,7 +5,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
-import { colors, typography } from '../theme/tokens';
+import { colors } from '../theme/tokens';
 
 export const PauseOverlay: React.FC = () => {
   const isPaused = useAppStore(state => state.isPaused);

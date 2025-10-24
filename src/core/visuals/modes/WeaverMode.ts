@@ -16,7 +16,6 @@ export class WeaverMode extends BaseMode {
   private particleData: Particle[] = [];
   private gravityWell: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private isAttracting: boolean = false;
-  private maxDistance: number = 10; // Max distance for line connections
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
@@ -91,7 +90,7 @@ export class WeaverMode extends BaseMode {
     // Can be re-enabled with a performance toggle
   }
   
-  update(time: number, deltaTime: number): void {
+  update(_time: number, _deltaTime: number): void {
     if (!this.particles) return;
     
     const positions = this.particles.geometry.attributes.position.array as Float32Array;

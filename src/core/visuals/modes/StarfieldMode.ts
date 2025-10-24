@@ -44,10 +44,10 @@ export class StarfieldMode extends BaseMode {
     this.starData = [];
     
     for (let i = 0; i < count; i++) {
-      // Random position
-      positions[i * 3] = (Math.random() - 0.5) * 100;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 100 - 50;
+      // Random position - spread stars further out
+      positions[i * 3] = (Math.random() - 0.5) * 200;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 200 - 100;
       
       // Color variation (white to blue)
       const color = new THREE.Color();
@@ -58,12 +58,12 @@ export class StarfieldMode extends BaseMode {
       colors[i * 3 + 2] = color.b;
       
       // Size variation
-      sizes[i] = Math.random() * 0.5 + 0.1;
+      sizes[i] = Math.random() * 0.3 + 0.05;
       
       // Store z and individual speed
       this.starData.push({
         z: positions[i * 3 + 2],
-        speed: 0.8 + Math.random() * 0.4,
+        speed: 0.5 + Math.random() * 1.0, // More variation in speed
       });
     }
     
@@ -88,7 +88,7 @@ export class StarfieldMode extends BaseMode {
     this.targetSpeed = this.config.speed;
   }
   
-  update(time: number, deltaTime: number): void {
+  update(_time: number, deltaTime: number): void {
     if (!this.stars) return;
     
     // Smooth speed transition
@@ -100,20 +100,20 @@ export class StarfieldMode extends BaseMode {
     for (let i = 0; i < this.starData.length; i++) {
       // Move star forward - increased multiplier for visible movement
       const speed = this.currentSpeed * this.starData[i].speed * this.config.intensity;
-      this.starData[i].z += speed * 50 * deltaTime; // Increased from 20 to 50
+      this.starData[i].z += speed * 100 * deltaTime; // Increased from 50 to 100
       positions[i * 3 + 2] = this.starData[i].z;
       
       // Wrap around when star passes camera
-      if (this.starData[i].z > 10) {
-        this.starData[i].z = -50;
-        positions[i * 3] = (Math.random() - 0.5) * 100;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+      if (this.starData[i].z > 20) {
+        this.starData[i].z = -100;
+        positions[i * 3] = (Math.random() - 0.5) * 200;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
         positions[i * 3 + 2] = this.starData[i].z;
       }
       
       // Size based on depth (closer = bigger)
-      const depth = (this.starData[i].z + 50) / 60;
-      sizes[i] = (0.1 + depth * 0.5) * (1 + this.currentSpeed * 0.5);
+      const depth = (this.starData[i].z + 100) / 120;
+      sizes[i] = (0.05 + depth * 1.0) * (1 + this.currentSpeed * 0.8);
     }
     
     this.stars.geometry.attributes.position.needsUpdate = true;
@@ -132,7 +132,7 @@ export class StarfieldMode extends BaseMode {
     this.starData = [];
   }
   
-  handleInteraction(x: number, y: number, type: 'start' | 'move' | 'end'): void {
+  handleInteraction(_x: number, _y: number, type: 'start' | 'move' | 'end'): void {
     if (type === 'start') {
       // Accelerate on touch/click
       this.isAccelerating = true;

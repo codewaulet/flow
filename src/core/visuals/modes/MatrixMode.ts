@@ -12,8 +12,6 @@ export class MatrixMode extends BaseMode {
   private drops: number[] = [];
   private fontSize: number = 16;
   private characters: string = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  private texture: THREE.CanvasTexture | null = null;
-  private mesh: THREE.Mesh | null = null;
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
@@ -32,25 +30,38 @@ export class MatrixMode extends BaseMode {
   }
   
   async init(): Promise<void> {
-    // Setup orthographic camera
+    // Setup orthographic camera for full screen
     const aspect = window.innerWidth / window.innerHeight;
     if (!(this.camera instanceof THREE.OrthographicCamera)) {
       this.camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
     }
     this.camera.position.z = 1;
     
-    // Create canvas
+    // Set scene background to black for Matrix mode
+    this.scene.background = new THREE.Color('#000000');
+    
+    // Create canvas - full screen size
     this.canvas = document.createElement('canvas');
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
-    this.ctx = this.canvas.getContext('2d');
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.top = '0';
+    this.canvas.style.left = '0';
+    this.canvas.style.width = '100%';
+    this.canvas.style.height = '100%';
+    this.canvas.style.zIndex = '1';
+    
+    // Add canvas to DOM for full screen rendering
+    document.body.appendChild(this.canvas);
+    
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     
     if (!this.ctx) {
       throw new Error('Could not get 2D context');
     }
     
-    // Calculate columns
-    this.fontSize = Math.max(12, Math.min(20, this.config.particleCount / 5));
+    // Calculate columns based on screen width
+    this.fontSize = Math.max(14, Math.min(24, window.innerWidth / 80));
     this.columns = Math.floor(this.canvas.width / this.fontSize);
     
     // Initialize drops
@@ -62,24 +73,10 @@ export class MatrixMode extends BaseMode {
     // Fill canvas with black initially
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    
-    // Create texture from canvas
-    this.texture = new THREE.CanvasTexture(this.canvas);
-    this.texture.needsUpdate = true;
-    
-    // Create plane to display the canvas
-    const geometry = new THREE.PlaneGeometry(2 * aspect, 2);
-    const material = new THREE.MeshBasicMaterial({
-      map: this.texture,
-      transparent: false,
-    });
-    
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.scene.add(this.mesh);
   }
   
-  update(time: number, deltaTime: number): void {
-    if (!this.ctx || !this.canvas || !this.texture) return;
+  update(time: number, _deltaTime: number): void {
+    if (!this.ctx || !this.canvas) return;
     
     // Fade effect
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
@@ -139,9 +136,6 @@ export class MatrixMode extends BaseMode {
     if (Math.random() > 0.98) {
       this.addGlitch();
     }
-    
-    // Update texture
-    this.texture.needsUpdate = true;
   }
   
   /**
@@ -186,18 +180,9 @@ export class MatrixMode extends BaseMode {
   }
   
   destroy(): void {
-    if (this.mesh) {
-      this.mesh.geometry.dispose();
-      if (this.mesh.material instanceof THREE.Material) {
-        this.mesh.material.dispose();
-      }
-      this.scene.remove(this.mesh);
-      this.mesh = null;
-    }
-    
-    if (this.texture) {
-      this.texture.dispose();
-      this.texture = null;
+    // Remove canvas from DOM
+    if (this.canvas && this.canvas.parentNode) {
+      this.canvas.parentNode.removeChild(this.canvas);
     }
     
     this.canvas = null;
@@ -209,6 +194,8 @@ export class MatrixMode extends BaseMode {
     if (this.canvas) {
       this.canvas.width = width;
       this.canvas.height = height;
+      this.canvas.style.width = '100%';
+      this.canvas.style.height = '100%';
       this.columns = Math.floor(width / this.fontSize);
       
       // Reinitialize drops
@@ -217,20 +204,11 @@ export class MatrixMode extends BaseMode {
         this.drops[i] = Math.random() * -(height / this.fontSize);
       }
     }
-    
-    // Update camera
-    const aspect = width / height;
-    if (this.camera instanceof THREE.OrthographicCamera) {
-      this.camera.left = -aspect;
-      this.camera.right = aspect;
-      this.camera.updateProjectionMatrix();
-    }
-    
-    // Update mesh
-    if (this.mesh) {
-      this.mesh.geometry.dispose();
-      this.mesh.geometry = new THREE.PlaneGeometry(2 * aspect, 2);
-    }
+  }
+  
+  protected onConfigUpdate(): void {
+    // Speed and intensity are used directly in update
+    // Color is used in update method
   }
 }
 

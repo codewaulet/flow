@@ -9,38 +9,48 @@ import { isMobile } from '../../utils/device';
 
 const hints = {
   mobile: [
-    { icon: '👆', text: 'Tap to show/hide controls' },
-    { icon: '↔️', text: 'Swipe left/right to switch modes' },
-    { icon: '↕️', text: 'Swipe up for settings' },
+    { icon: '👆', text: 'Нажмите для показа/скрытия элементов управления' },
+    { icon: '↔️', text: 'Свайп влево/вправо для смены режимов' },
+    { icon: '↕️', text: 'Свайп вверх для настроек' },
   ],
   desktop: [
-    { icon: '←→', text: 'Arrow keys to switch modes' },
-    { icon: '⌨️', text: 'Press H to toggle UI' },
-    { icon: '␣', text: 'Space to pause' },
+    { icon: '←→', text: 'Стрелки для смены режимов' },
+    { icon: '⌨️', text: 'Нажмите H для переключения UI' },
+    { icon: '␣', text: 'Пробел для паузы' },
   ],
 };
 
 export const GestureHints: React.FC = () => {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [currentHint, setCurrentHint] = useState(0);
   const mobile = isMobile();
   const hintList = mobile ? hints.mobile : hints.desktop;
   
   useEffect(() => {
-    // Hide after 30 seconds
-    const hideTimer = setTimeout(() => {
-      setVisible(false);
-    }, 30000);
+    // Check if user has seen hints before
+    const hasSeenHints = localStorage.getItem('flow-hints-seen');
     
-    // Rotate hints every 4 seconds
-    const rotateTimer = setInterval(() => {
-      setCurrentHint(prev => (prev + 1) % hintList.length);
-    }, 4000);
-    
-    return () => {
-      clearTimeout(hideTimer);
-      clearInterval(rotateTimer);
-    };
+    if (!hasSeenHints) {
+      setVisible(true);
+      
+      // Mark as seen
+      localStorage.setItem('flow-hints-seen', 'true');
+      
+      // Hide after 20 seconds
+      const hideTimer = setTimeout(() => {
+        setVisible(false);
+      }, 20000);
+      
+      // Rotate hints every 4 seconds
+      const rotateTimer = setInterval(() => {
+        setCurrentHint(prev => (prev + 1) % hintList.length);
+      }, 4000);
+      
+      return () => {
+        clearTimeout(hideTimer);
+        clearInterval(rotateTimer);
+      };
+    }
   }, [hintList.length]);
   
   return (

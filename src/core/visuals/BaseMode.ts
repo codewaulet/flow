@@ -9,6 +9,7 @@ export interface ModeConfig {
   intensity: number;
   particleCount: number;
   color: string;
+  particleSize?: number; // Optional particle size multiplier
 }
 
 export interface ModeMetadata {
@@ -72,7 +73,7 @@ export abstract class BaseMode {
   /**
    * Handle user interaction
    */
-  handleInteraction(x: number, y: number, type: 'start' | 'move' | 'end'): void {
+  handleInteraction(_x: number, _y: number, _type: 'start' | 'move' | 'end'): void {
     // Default implementation - modes can override
   }
 
@@ -100,7 +101,7 @@ export abstract class BaseMode {
   /**
    * Pause/resume the mode
    */
-  setPaused(paused: boolean): void {
+  setPaused(_paused: boolean): void {
     // Modes can override for specific pause behavior
   }
 

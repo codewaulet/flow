@@ -128,7 +128,7 @@ export class OrbsMode extends BaseMode {
     this.scrollOffset = 0;
   }
   
-  update(time: number, deltaTime: number): void {
+  update(_time: number, deltaTime: number): void {
     if (!this.particles) return;
     
     const positions = this.particles.geometry.attributes.position.array as Float32Array;

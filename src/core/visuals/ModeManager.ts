@@ -9,14 +9,10 @@ export class ModeManager {
   private modes: Map<string, BaseMode> = new Map();
   private currentMode: BaseMode | null = null;
   private scene: THREE.Scene;
-  private camera: THREE.Camera;
-  private renderer: THREE.WebGLRenderer;
   private isTransitioning: boolean = false;
   
-  constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
+  constructor(scene: THREE.Scene, _camera: THREE.Camera, _renderer: THREE.WebGLRenderer) {
     this.scene = scene;
-    this.camera = camera;
-    this.renderer = renderer;
   }
   
   /**
@@ -32,8 +28,7 @@ export class ModeManager {
    */
   public async switchMode(modeId: string): Promise<void> {
     if (this.isTransitioning) {
-      console.warn('Mode transition already in progress');
-      return;
+      return; // Silently ignore if already transitioning
     }
     
     const newMode = this.modes.get(modeId);

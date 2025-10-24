@@ -53,7 +53,27 @@ export const Layout: React.FC = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rendererRef.current = renderer;
     
+    // Handle resize
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      
+      // Force canvas to fill viewport
+      if (canvasRef.current) {
+        canvasRef.current.style.width = '100vw';
+        canvasRef.current.style.height = '100vh';
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
     return () => {
+      window.removeEventListener('resize', handleResize);
       renderer.dispose();
     };
   }, []);
@@ -147,7 +167,7 @@ export const Layout: React.FC = () => {
         case 'h':
         case 'H':
           e.preventDefault();
-          setUIVisible(prev => !prev);
+          setUIVisible(!useAppStore.getState().uiVisible);
           break;
       }
     };
@@ -170,8 +190,12 @@ export const Layout: React.FC = () => {
         ref={canvasRef}
         style={{
           display: 'block',
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 1,
         }}
       />
       

@@ -12,6 +12,7 @@ export interface ModeConfig {
   intensity: number;
   particleCount: number;
   color: string;
+  particleSize?: number; // Optional particle size multiplier
 }
 
 export interface AppState {
@@ -76,10 +77,11 @@ export interface AppState {
 // Default mode configurations (optimized for better FPS)
 const defaultModeConfigs: Record<VisualMode, ModeConfig> = {
   breathe: {
-    speed: 0.3,
-    intensity: 0.8,
-    particleCount: 3000, // Galaxy particles
-    color: '#a78bfa',
+    speed: 1.0, // Increased speed
+    intensity: 2.0, // Much stronger black hole
+    particleCount: 5000, // Increased for better black hole effect
+    color: '#8b5cf6',
+    particleSize: 1.0,
   },
   toroid: {
     speed: 0.5,
@@ -113,7 +115,7 @@ const defaultModeConfigs: Record<VisualMode, ModeConfig> = {
   },
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, _get) => ({
   // Initial state
   currentMode: 'breathe',
   modeConfig: defaultModeConfigs,

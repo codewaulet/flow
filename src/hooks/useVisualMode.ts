@@ -14,7 +14,7 @@ import { OrbsMode } from '../core/visuals/modes/OrbsMode';
 import { useAppStore, VisualMode } from '../store/useAppStore';
 
 export const useVisualMode = (
-  canvas: HTMLCanvasElement | null,
+  _canvas: HTMLCanvasElement | null,
   scene: THREE.Scene | null,
   camera: THREE.Camera | null,
   renderer: THREE.WebGLRenderer | null
@@ -85,9 +85,9 @@ export const useVisualMode = (
     let adjustedCount = baseConfig.particleCount;
     
     if (qualityLevel === 'low') {
-      adjustedCount = Math.floor(baseConfig.particleCount * 0.4);
+      adjustedCount = Math.max(1000, Math.floor(baseConfig.particleCount * 0.4));
     } else if (qualityLevel === 'medium') {
-      adjustedCount = Math.floor(baseConfig.particleCount * 0.7);
+      adjustedCount = Math.max(1500, Math.floor(baseConfig.particleCount * 0.7));
     }
     
     // Only update if significantly different

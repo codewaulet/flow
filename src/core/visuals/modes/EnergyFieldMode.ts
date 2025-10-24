@@ -23,7 +23,6 @@ export class EnergyFieldMode extends BaseMode {
   private particleData: FieldParticle[] = [];
   private mousePos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private isInteracting: boolean = false;
-  private gridSize: number = 50;
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
@@ -49,7 +48,6 @@ export class EnergyFieldMode extends BaseMode {
     }
     
     const gridSize = Math.floor(Math.sqrt(this.config.particleCount));
-    this.gridSize = gridSize;
     const count = gridSize * gridSize;
     
     const geometry = new THREE.BufferGeometry();
@@ -112,7 +110,7 @@ export class EnergyFieldMode extends BaseMode {
     this.scene.add(this.particles);
   }
   
-  update(time: number, deltaTime: number): void {
+  update(_time: number, _deltaTime: number): void {
     if (!this.particles) return;
     
     const positions = this.particles.geometry.attributes.position.array as Float32Array;

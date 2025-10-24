@@ -6,7 +6,6 @@ import React, { useEffect } from 'react';
 import { Layout } from './Layout';
 import { Splash } from '../ui/components/Splash';
 import { PauseOverlay } from '../ui/components/PauseOverlay';
-import { GestureHints } from '../ui/components/GestureHints';
 import { useAudio } from '../hooks/useAudio';
 import { usePerformance } from '../hooks/usePerformance';
 import { useAppStore } from '../store/useAppStore';
@@ -20,7 +19,6 @@ export const App: React.FC = () => {
   
   const showFPS = useAppStore(state => state.showFPS);
   const fps = useAppStore(state => state.fps);
-  const isTransitioning = useAppStore(state => state.isTransitioning);
   const qualityLevel = useAppStore(state => state.qualityLevel);
   
   // Prevent default touch behaviors
@@ -45,7 +43,6 @@ export const App: React.FC = () => {
       <Splash />
       <Layout />
       <PauseOverlay />
-      <GestureHints />
       
       {/* FPS Counter */}
       {showFPS && (
@@ -69,28 +66,6 @@ export const App: React.FC = () => {
         </div>
       )}
       
-      {/* Transition Indicator */}
-      {isTransitioning && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            padding: '1rem 2rem',
-            background: 'rgba(0, 0, 0, 0.8)',
-            borderRadius: '50px',
-            color: '#a78bfa',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            zIndex: 999,
-            pointerEvents: 'none',
-            opacity: 0.8,
-          }}
-        >
-          Transitioning...
-        </div>
-      )}
     </div>
   );
 };

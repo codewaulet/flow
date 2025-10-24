@@ -5,7 +5,7 @@
 import React from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
-import { colors, spacing, glassmorphism, typography } from '../theme/tokens';
+import { colors, spacing, typography } from '../theme/tokens';
 import { isMobile } from '../../utils/device';
 
 export const QuickSettings: React.FC = () => {
@@ -26,11 +26,20 @@ export const QuickSettings: React.FC = () => {
   const config = modeConfig[currentMode];
   const mobile = isMobile();
   
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: any, info: PanInfo) => {
     // Close if dragged down more than 100px on mobile
     if (mobile && info.offset.y > 100) {
       setSettingsOpen(false);
     }
+  };
+  
+  const modeNames: Record<string, string> = {
+    breathe: 'Черная дыра',
+    toroid: 'Тороид',
+    weaver: 'Ткач',
+    starfield: 'Звездное поле',
+    matrix: 'Матрица',
+    orbs: 'Ползание',
   };
   
   return (
@@ -46,8 +55,8 @@ export const QuickSettings: React.FC = () => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(10px)',
+              background: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(8px)',
               zIndex: 90,
               touchAction: 'none',
             }}
@@ -69,19 +78,21 @@ export const QuickSettings: React.FC = () => {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                maxHeight: '85vh',
-                borderRadius: '24px 24px 0 0',
+                maxHeight: '80vh',
+                borderRadius: '20px 20px 0 0',
               } : {
                 right: 0,
                 top: 0,
                 bottom: 0,
-                width: '400px',
+                width: '380px',
                 maxWidth: '90vw',
                 borderRadius: '0',
               }),
-              ...glassmorphism,
-              padding: mobile ? spacing[4] : spacing[6],
-              paddingBottom: mobile ? spacing[8] : spacing[6], // Extra padding for mobile safe area
+              background: 'rgba(10, 10, 20, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: mobile ? spacing[4] : spacing[5],
+              paddingBottom: mobile ? spacing[8] : spacing[5],
               overflowY: 'auto',
               zIndex: 100,
             }}
@@ -89,11 +100,11 @@ export const QuickSettings: React.FC = () => {
             {/* Drag Handle (Mobile) */}
             {mobile && (
               <div style={{
-                width: '40px',
-                height: '4px',
-                background: 'rgba(255, 255, 255, 0.3)',
-                borderRadius: '2px',
-                margin: '0 auto 1rem',
+                width: '50px',
+                height: '5px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                borderRadius: '3px',
+                margin: '0 auto 1.5rem',
               }} />
             )}
             
@@ -112,7 +123,7 @@ export const QuickSettings: React.FC = () => {
                   margin: 0,
                   marginBottom: spacing[1],
                 }}>
-                  Settings
+                  Настройки
                 </h2>
                 {!mobile && (
                   <div style={{
@@ -151,7 +162,7 @@ export const QuickSettings: React.FC = () => {
                 color: colors.accent.purple[400],
                 marginBottom: spacing[4],
               }}>
-                {currentMode.charAt(0).toUpperCase() + currentMode.slice(1)} Mode
+                {modeNames[currentMode] || currentMode}
               </h3>
               
               {/* Speed */}
@@ -163,7 +174,7 @@ export const QuickSettings: React.FC = () => {
                   color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Speed: <span style={{ color: colors.accent.purple[400] }}>{config.speed.toFixed(1)}</span>
+                  Скорость: <span style={{ color: colors.accent.purple[400] }}>{config.speed.toFixed(1)}</span>
                 </label>
                 <input
                   type="range"
@@ -188,7 +199,7 @@ export const QuickSettings: React.FC = () => {
                   color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Intensity: <span style={{ color: colors.accent.purple[400] }}>{(config.intensity * 100).toFixed(0)}%</span>
+                  {currentMode === 'breathe' ? 'Сила черной дыры' : 'Интенсивность'}: <span style={{ color: colors.accent.purple[400] }}>{(config.intensity * 100).toFixed(0)}%</span>
                 </label>
                 <input
                   type="range"
@@ -213,14 +224,14 @@ export const QuickSettings: React.FC = () => {
                   color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Particles: <span style={{ color: colors.accent.purple[400] }}>{config.particleCount}</span>
+                  Частицы: <span style={{ color: colors.accent.purple[400] }}>{config.particleCount}</span>
                   {config.particleCount > 3000 && (
                     <span style={{ 
                       color: colors.text.tertiary, 
                       fontSize: typography.fontSize.xs,
                       marginLeft: spacing[2],
                     }}>
-                      (may impact FPS)
+                      (может влиять на FPS)
                     </span>
                   )}
                 </label>
@@ -237,6 +248,81 @@ export const QuickSettings: React.FC = () => {
                   }}
                 />
               </div>
+              
+              {/* Particle Size */}
+              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
+                <label style={{ 
+                  display: 'block',
+                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
+                  marginBottom: spacing[2],
+                }}>
+                  Размер частиц: <span style={{ color: colors.accent.purple[400] }}>{((config.particleSize || 1.0) * 100).toFixed(0)}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value={config.particleSize || 1.0}
+                  onChange={(e) => updateModeConfig(currentMode, { particleSize: parseFloat(e.target.value) })}
+                  style={{ 
+                    width: '100%',
+                    height: mobile ? '8px' : '4px',
+                  }}
+                />
+              </div>
+              
+              {/* Color Picker */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <label style={{
+                  display: 'block',
+                  color: colors.text.secondary,
+                  fontSize: typography.fontSize.sm,
+                  marginBottom: spacing[2],
+                }}>
+                  Цвет анимации
+                </label>
+                <div style={{
+                  display: 'flex',
+                  gap: spacing[2],
+                  flexWrap: 'wrap',
+                }}>
+                  {[
+                    { name: 'Фиолетовый', value: '#a78bfa' },
+                    { name: 'Синий', value: '#3b82f6' },
+                    { name: 'Зеленый', value: '#10b981' },
+                    { name: 'Красный', value: '#ef4444' },
+                    { name: 'Желтый', value: '#f59e0b' },
+                    { name: 'Розовый', value: '#ec4899' },
+                  ].map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => updateModeConfig(currentMode, { color: color.value })}
+                      style={{
+                        width: mobile ? '2.5rem' : '2rem',
+                        height: mobile ? '2.5rem' : '2rem',
+                        borderRadius: '50%',
+                        background: color.value,
+                        border: config.color === color.value ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: mobile ? '0.7rem' : '0.6rem',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                      }}
+                      title={color.name}
+                    >
+                      {config.color === color.value ? '✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             
             {/* Audio Settings */}
@@ -247,7 +333,7 @@ export const QuickSettings: React.FC = () => {
                 color: colors.accent.purple[400],
                 marginBottom: spacing[4],
               }}>
-                Audio
+                Аудио
               </h3>
               
               <div style={{ marginBottom: spacing[4] }}>
@@ -257,7 +343,7 @@ export const QuickSettings: React.FC = () => {
                   color: colors.text.secondary,
                   marginBottom: spacing[2],
                 }}>
-                  Volume: {(audioVolume * 100).toFixed(0)}%
+                  Громкость: {(audioVolume * 100).toFixed(0)}%
                 </label>
                 <input
                   type="range"
@@ -279,7 +365,7 @@ export const QuickSettings: React.FC = () => {
                 color: colors.accent.purple[400],
                 marginBottom: spacing[4],
               }}>
-                General
+                Общие
               </h3>
               
               {/* Haptic Feedback */}
@@ -290,7 +376,7 @@ export const QuickSettings: React.FC = () => {
                 marginBottom: spacing[4],
               }}>
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
-                  Haptic Feedback
+                  Тактильная обратная связь
                 </span>
                 <button
                   onClick={() => setHapticEnabled(!hapticEnabled)}
@@ -326,7 +412,7 @@ export const QuickSettings: React.FC = () => {
                 marginBottom: spacing[4],
               }}>
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.text.primary }}>
-                  Show FPS {showFPS && `(${fps})`}
+                  Показать FPS {showFPS && `(${fps})`}
                 </span>
                 <button
                   onClick={toggleFPS}
