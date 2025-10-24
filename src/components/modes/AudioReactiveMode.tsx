@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Slider } from '../ui/Slider';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '../ui/Select';
+import { Music, Play, Pause, RotateCcw, Volume2, Mic, Headphones } from 'lucide-react';
 
 interface AudioReactiveModeProps {
   isActive: boolean;
@@ -10,338 +16,398 @@ const AudioReactiveMode: React.FC<AudioReactiveModeProps> = ({ isActive }) => {
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [frequencyData, setFrequencyData] = useState<number[]>([]);
-  const [bpm, setBpm] = useState(0);
-  const [isBeatDetected, setIsBeatDetected] = useState(false);
-  const [sensitivity, setSensitivity] = useState(0.5);
+  const [sensitivity, setSensitivity] = useState(0.7);
+  const [reactiveMode, setReactiveMode] = useState<'bass' | 'treble' | 'full'>('full');
+  const [visualizationType, setVisualizationType] = useState<'bars' | 'circle' | 'wave'>('bars');
   
   const audioContextRef = useRef<AudioContext>();
   const analyserRef = useRef<AnalyserNode>();
   const microphoneRef = useRef<MediaStreamAudioSourceNode>();
   const animationRef = useRef<number>();
-  const beatDetectionRef = useRef<{ lastBeat: number; threshold: number }>({ lastBeat: 0, threshold: 0 });
   
   const setMode = useSettingsStore((state) => state.setMode);
   const setSound = useSettingsStore((state) => state.setSound);
   const setSpeed = useSettingsStore((state) => state.setSpeed);
-  const setFlickerSize = useSettingsStore((state) => state.setFlickerSize);
-  const setFlickerAlpha = useSettingsStore((state) => state.setFlickerAlpha);
+
+  const reactiveModes = {
+    bass: { name: 'Низкие частоты', color: '#f44336', description: 'Реакция на басы и ритм' },
+    treble: { name: 'Высокие частоты', color: '#2196f3', description: 'Реакция на мелодию и гармонию' },
+    full: { name: 'Полный спектр', color: '#4caf50', description: 'Реакция на весь звуковой диапазон' }
+  };
+
+  const visualizationTypes = {
+    bars: { name: 'Столбцы', icon: '📊', description: 'Классические частотные столбцы' },
+    circle: { name: 'Круг', icon: '⭕', description: 'Круговая визуализация' },
+    wave: { name: 'Волна', icon: '🌊', description: 'Волновая форма' }
+  };
+
+  const currentReactiveMode = reactiveModes[reactiveMode];
+  const currentVisualization = visualizationTypes[visualizationType];
 
   useEffect(() => {
-    if (isActive) {
-      setMode('dynamic');
-      setSound('noise');
-      setSpeed(1.5);
-      setFlickerSize(true);
-      setFlickerAlpha(true);
+    if (isListening) {
+      startAudioAnalysis();
+    } else {
+      stopAudioAnalysis();
     }
-  }, [isActive, setMode, setSound, setSpeed, setFlickerSize, setFlickerAlpha]);
+    
+    return () => {
+      stopAudioAnalysis();
+    };
+  }, [isListening]);
 
-  const startAudioCapture = async () => {
+  const startAudioAnalysis = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        } 
-      });
-
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      audioContextRef.current = new AudioContext();
       analyserRef.current = audioContextRef.current.createAnalyser();
       microphoneRef.current = audioContextRef.current.createMediaStreamSource(stream);
-
-      analyserRef.current.fftSize = 256;
-      analyserRef.current.smoothingTimeConstant = 0.8;
       
       microphoneRef.current.connect(analyserRef.current);
-
-      setIsListening(true);
-      analyzeAudio();
+      
+      analyserRef.current.fftSize = 256;
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      const analyze = () => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          
+          // Вычисляем общий уровень звука
+          const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+          setAudioLevel(average / 255);
+          
+          // Обновляем частотные данные
+          setFrequencyData(Array.from(dataArray));
+          
+          // Адаптируем скорость частиц на основе звука
+          const speedMultiplier = 1 + (average / 255) * 2;
+          setSpeed(speedMultiplier);
+          
+          animationRef.current = requestAnimationFrame(analyze);
+        }
+      };
+      
+      analyze();
     } catch (error) {
       console.error('Ошибка доступа к микрофону:', error);
     }
   };
 
-  const stopAudioCapture = () => {
-    if (microphoneRef.current) {
-      microphoneRef.current.disconnect();
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-    }
+  const stopAudioAnalysis = () => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
-    setIsListening(false);
+    
+    if (microphoneRef.current) {
+      microphoneRef.current.disconnect();
+    }
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    
     setAudioLevel(0);
     setFrequencyData([]);
-    setBpm(0);
   };
 
-  const analyzeAudio = () => {
-    if (!analyserRef.current) return;
-
-    const bufferLength = analyserRef.current.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    const timeDomainArray = new Uint8Array(bufferLength);
-
-    const updateAudioData = () => {
-      analyserRef.current!.getByteFrequencyData(dataArray);
-      analyserRef.current!.getByteTimeDomainData(timeDomainArray);
-
-      // Вычисляем общий уровень звука
-      const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-      setAudioLevel(average / 255);
-
-      // Обновляем данные частот
-      setFrequencyData(Array.from(dataArray));
-
-      // Детекция битов
-      detectBeat(average);
-
-      // Обновляем скорость частиц в зависимости от уровня звука
-      const newSpeed = 0.5 + (average / 255) * 2;
-      setSpeed(newSpeed);
-
-      animationRef.current = requestAnimationFrame(updateAudioData);
-    };
-
-    updateAudioData();
-  };
-
-  const detectBeat = (currentLevel: number) => {
-    const now = Date.now();
-    const { lastBeat, threshold } = beatDetectionRef.current;
-    
-    // Динамический порог
-    const dynamicThreshold = threshold + (currentLevel - threshold) * 0.1;
-    beatDetectionRef.current.threshold = dynamicThreshold;
-
-    if (currentLevel > dynamicThreshold && now - lastBeat > 200) {
-      setIsBeatDetected(true);
-      beatDetectionRef.current.lastBeat = now;
-      
-      // Вычисляем BPM
-      const timeSinceLastBeat = now - lastBeat;
-      if (timeSinceLastBeat > 0) {
-        const currentBpm = Math.round(60000 / timeSinceLastBeat);
-        if (currentBpm > 60 && currentBpm < 200) {
-          setBpm(currentBpm);
-        }
-      }
-
-      setTimeout(() => setIsBeatDetected(false), 100);
-    }
-  };
-
-  const getFrequencyColor = (index: number) => {
-    const hue = (index / frequencyData.length) * 360;
-    const saturation = Math.min(100, frequencyData[index] / 2.55);
-    const lightness = 50 + (frequencyData[index] / 5.1);
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const resetAudio = () => {
+    stopAudioAnalysis();
+    setAudioLevel(0);
+    setFrequencyData([]);
   };
 
   if (!isActive) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center"
-      style={{
-        background: `linear-gradient(135deg, 
-          rgba(255, 107, 107, ${audioLevel * 0.3}), 
-          rgba(30, 136, 229, ${audioLevel * 0.3}))`,
-        backdropFilter: 'blur(10px)'
-      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
     >
-      <div className="max-w-4xl mx-4 text-center">
-        {/* Заголовок */}
-        <motion.h2
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-3xl font-bold mb-8"
-          style={{ color: isBeatDetected ? '#ff6b6b' : '#00e5cc' }}
-        >
-          Аудио-реактивный режим
-        </motion.h2>
-
-        {/* Визуализация аудио */}
-        <div className="mb-8">
-          {/* Уровень звука */}
-          <div className="mb-6">
-            <div className="text-lg text-white/80 mb-2">Уровень звука</div>
-            <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden">
+      {/* Основная карточка аудио-реактивности */}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Music className="w-5 h-5 text-blue-500" />
+            Аудио-реактивный режим
+          </CardTitle>
+          <CardDescription>
+            Визуализация реагирует на звук из микрофона или музыку
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center space-y-6">
+            {/* Индикатор аудио */}
+            <motion.div
+              animate={{
+                scale: isListening ? [1, 1 + audioLevel * 0.3, 1] : 1,
+                opacity: isListening ? 1 : 0.6
+              }}
+              transition={{ duration: 0.1 }}
+              className="relative mx-auto w-32 h-32 rounded-full flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${currentReactiveMode.color}20, ${currentReactiveMode.color}10)`,
+                border: `3px solid ${currentReactiveMode.color}`
+              }}
+            >
               <motion.div
-                className="h-full rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, #00e5cc, #66ff99, #ff6b6b)`,
-                  width: `${audioLevel * 100}%`
+                animate={{
+                  scale: isListening ? [1, 1 + audioLevel * 0.2, 1] : 1,
+                  rotate: isListening ? [0, 360] : 0
                 }}
-                animate={{ width: `${audioLevel * 100}%` }}
-                transition={{ duration: 0.1 }}
-              />
-            </div>
-            <div className="text-sm text-white/60 mt-1">
-              {Math.round(audioLevel * 100)}%
-            </div>
-          </div>
+                transition={{ 
+                  duration: isListening ? 2 : 0.5,
+                  repeat: isListening ? Infinity : 0,
+                  ease: "linear"
+                }}
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${currentReactiveMode.color}, ${currentReactiveMode.color}cc)`,
+                  color: 'white'
+                }}
+              >
+                <Volume2 className="w-8 h-8" />
+              </motion.div>
+            </motion.div>
 
-          {/* Частотный спектр */}
-          <div className="mb-6">
-            <div className="text-lg text-white/80 mb-2">Частотный спектр</div>
-            <div className="flex items-end justify-center h-32 space-x-1">
-              {frequencyData.slice(0, 64).map((value, index) => (
+            {/* Уровень звука */}
+            <div className="space-y-2">
+              <motion.h3
+                className="text-2xl font-bold"
+                style={{ color: currentReactiveMode.color }}
+              >
+                {Math.round(audioLevel * 100)}%
+              </motion.h3>
+              <p className="text-text-secondary">
+                {currentReactiveMode.name}
+              </p>
+            </div>
+
+            {/* Визуализация частот */}
+            <div className="flex justify-center items-end gap-1 h-16">
+              {frequencyData.slice(0, 32).map((value, index) => (
                 <motion.div
                   key={index}
-                  className="w-2 rounded-t"
-                  style={{
-                    backgroundColor: getFrequencyColor(index),
-                    height: `${(value / 255) * 100}%`
-                  }}
                   animate={{
                     height: `${(value / 255) * 100}%`,
-                    opacity: 0.7 + (value / 255) * 0.3
+                    opacity: isListening ? 1 : 0.3
                   }}
                   transition={{ duration: 0.1 }}
+                  className="w-2 bg-gradient-to-t from-transparent to-current"
+                  style={{ 
+                    background: `linear-gradient(to top, transparent, ${currentReactiveMode.color})`,
+                    minHeight: '4px'
+                  }}
                 />
               ))}
             </div>
-          </div>
 
-          {/* BPM и детекция битов */}
-          <div className="flex justify-center items-center space-x-8 mb-6">
-            <div className="text-center">
-              <motion.div
-                animate={{ scale: isBeatDetected ? 1.2 : 1 }}
-                className="text-4xl mb-2"
-              >
-                {isBeatDetected ? '💥' : '🎵'}
-              </motion.div>
-              <div className="text-lg font-bold" style={{ color: '#66ff99' }}>
-                {bpm} BPM
+            {/* Статистика */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {Math.round(audioLevel * 100)}%
+                </div>
+                <div className="text-sm text-text-tertiary">Уровень</div>
               </div>
-              <div className="text-sm text-white/70">Темп</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {frequencyData.length}
+                </div>
+                <div className="text-sm text-text-tertiary">Частот</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {Math.round(sensitivity * 100)}%
+                </div>
+                <div className="text-sm text-text-tertiary">Чувствительность</div>
+              </div>
             </div>
 
-            <div className="text-center">
-              <motion.div
-                animate={{ 
-                  scale: audioLevel > 0.3 ? 1.1 : 1,
-                  rotate: audioLevel > 0.5 ? 360 : 0
-                }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl mb-2"
+            {/* Управление */}
+            <div className="flex gap-3 justify-center">
+              {!isListening ? (
+                <Button
+                  onClick={() => setIsListening(true)}
+                  className="flex items-center gap-2"
+                  style={{
+                    background: `linear-gradient(135deg, ${currentReactiveMode.color}, ${currentReactiveMode.color}cc)`,
+                    color: 'white'
+                  }}
+                >
+                  <Mic className="w-4 h-4" />
+                  Слушать
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setIsListening(false)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Pause className="w-4 h-4" />
+                  Остановить
+                </Button>
+              )}
+              
+              <Button
+                onClick={resetAudio}
+                variant="ghost"
+                className="flex items-center gap-2"
               >
-                🎤
-              </motion.div>
-              <div className="text-lg font-bold" style={{ color: '#1e88e5' }}>
-                {isListening ? 'Активен' : 'Неактивен'}
-              </div>
-              <div className="text-sm text-white/70">Микрофон</div>
+                <RotateCcw className="w-4 h-4" />
+                Сброс
+              </Button>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Настройки чувствительности */}
-        <div className="mb-8">
-          <div className="text-lg text-white/80 mb-3">Чувствительность</div>
-          <div className="flex items-center justify-center space-x-4">
-            <span className="text-white/70">Низкая</span>
-            <input
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.1"
-              value={sensitivity}
-              onChange={(e) => setSensitivity(Number(e.target.value))}
-              className="w-32"
-            />
-            <span className="text-white/70">Высокая</span>
-          </div>
-        </div>
+      {/* Настройки */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Режим реактивности */}
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Music className="w-4 h-4" />
+              Режим реактивности
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={reactiveMode} onValueChange={(value: any) => setReactiveMode(value)}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Badge variant="glass" style={{ color: currentReactiveMode.color }}>
+                    {currentReactiveMode.name}
+                  </Badge>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(reactiveModes).map(([key, mode]) => (
+                  <SelectItem key={key} value={key}>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-medium">{mode.name}</div>
+                      <div className="text-xs text-text-tertiary">{mode.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-        {/* Управление */}
-        <div className="flex justify-center space-x-4 mb-8">
-          {!isListening ? (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={startAudioCapture}
-              className="px-8 py-3 rounded-xl font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #00e5cc, #66ff99)',
-                color: 'white',
-                boxShadow: '0 4px 20px rgba(0, 229, 204, 0.4)'
-              }}
-            >
-              🎤 Начать прослушивание
-            </motion.button>
-          ) : (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={stopAudioCapture}
-              className="px-8 py-3 rounded-xl font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #ff6b6b, #ff8e8e)',
-                color: 'white',
-                boxShadow: '0 4px 20px rgba(255, 107, 107, 0.4)'
-              }}
-            >
-              ⏹️ Остановить
-            </motion.button>
-          )}
-        </div>
-
-        {/* Информация */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-sm text-white/60 max-w-2xl mx-auto"
-        >
-          <div className="mb-4">
-            🎵 <strong>Аудио-реактивность:</strong> Частицы реагируют на звук с микрофона
-          </div>
-          <div className="mb-4">
-            💥 <strong>Детекция битов:</strong> Визуальные эффекты синхронизированы с ритмом
-          </div>
-          <div className="mb-4">
-            🌈 <strong>Частотный анализ:</strong> Разные частоты создают разные цвета
-          </div>
-          <div>
-            ⚡ <strong>Автоматическая настройка:</strong> Скорость частиц адаптируется к громкости
-          </div>
-        </motion.div>
-
-        {/* Визуальные эффекты */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: getFrequencyColor(i % 64),
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                scale: [0, audioLevel * 2, 0],
-                opacity: [0, audioLevel, 0],
-                y: [0, -100, 0]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                delay: i * 0.1,
-                ease: "easeOut"
-              }}
-            />
-          ))}
-        </div>
+        {/* Тип визуализации */}
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Headphones className="w-4 h-4" />
+              Тип визуализации
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={visualizationType} onValueChange={(value: any) => setVisualizationType(value)}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{currentVisualization.icon}</span>
+                  <span className="text-sm">{currentVisualization.name}</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(visualizationTypes).map(([key, viz]) => (
+                  <SelectItem key={key} value={key}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{viz.icon}</span>
+                      <div>
+                        <div className="text-sm font-medium">{viz.name}</div>
+                        <div className="text-xs text-text-tertiary">{viz.description}</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Чувствительность */}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Volume2 className="w-4 h-4" />
+            Чувствительность микрофона
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Slider
+            min={0.1}
+            max={1.0}
+            step={0.1}
+            value={sensitivity}
+            onChange={(e) => setSensitivity(parseFloat(e.target.value))}
+            label="Чувствительность"
+            unit=""
+            description={`${Math.round(sensitivity * 100)}% - ${sensitivity < 0.3 ? 'Низкая' : sensitivity < 0.7 ? 'Средняя' : 'Высокая'}`}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Быстрые настройки */}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle className="text-base">Быстрые настройки</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('dynamic');
+                setSound('white_noise');
+                setReactiveMode('bass');
+                setVisualizationType('bars');
+                setSensitivity(0.8);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Music className="w-5 h-5 text-red-500" />
+              <span className="text-sm">Басы</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('smooth');
+                setSound('theta');
+                setReactiveMode('treble');
+                setVisualizationType('circle');
+                setSensitivity(0.6);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Volume2 className="w-5 h-5 text-blue-500" />
+              <span className="text-sm">Мелодия</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('dynamic');
+                setSound('rain');
+                setReactiveMode('full');
+                setVisualizationType('wave');
+                setSensitivity(0.5);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Headphones className="w-5 h-5 text-green-500" />
+              <span className="text-sm">Полный</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

@@ -104,7 +104,6 @@ export const useAnimation = ({
   }, [
     gameRef,
     particleSystemRef,
-    settings,
     currentSpeed,
     targetSpeed,
     setCurrentSpeed,

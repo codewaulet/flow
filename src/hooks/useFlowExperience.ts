@@ -8,7 +8,7 @@ export const useFlowExperience = () => {
   const audioManager = AudioManager.getInstance();
   
   // Получаем настройки и методы из Zustand с атомарными селекторами
-  const baseSpeed = useSettingsStore((state) => state.baseSpeed);
+  const speed = useSettingsStore((state) => state.speed);
   const sound = useSettingsStore((state) => state.sound);
   
   const [showIntro, setShowIntro] = useState(true);
@@ -37,9 +37,9 @@ export const useFlowExperience = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Переключаем звук
-  const switchSound = useCallback((soundType: typeof sound) => {
+  const switchSound = useCallback((soundType: string) => {
     if (audioReady) {
-      audioManager.switchSound(soundType);
+      audioManager.switchSound(soundType as any);
     }
   }, [audioReady, audioManager]);
 
@@ -49,8 +49,8 @@ export const useFlowExperience = () => {
   }, []);
 
   const handleAccelerationEnd = useCallback(() => {
-    setTargetSpeed(baseSpeed);
-  }, [baseSpeed]);
+    setTargetSpeed(speed);
+  }, [speed]);
 
   // Инициализация аудио
   const initAudio = useCallback(async () => {
@@ -75,7 +75,7 @@ export const useFlowExperience = () => {
 
   // Обновляем звук в зависимости от скорости
   const updateSoundWithSpeed = useCallback(() => {
-    audioManager.updateSoundWithSpeed(currentSpeed, sound);
+    audioManager.updateSoundWithSpeed(currentSpeed, sound as any);
   }, [currentSpeed, sound, audioManager]);
 
   // Запускаем гармонические тона

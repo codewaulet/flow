@@ -7,21 +7,28 @@ interface UseParticleSettingsProps {
 }
 
 export const useParticleSettings = ({ particleSystemRef }: UseParticleSettingsProps) => {
-  const settings = useSettingsStore((state) => ({
-    mode: state.mode,
-    subMode: state.subMode,
-    baseSpeed: state.baseSpeed,
-    sound: state.sound,
-    flickerSize: state.flickerSize,
-    flickerAlpha: state.flickerAlpha,
-    showTrails: state.showTrails,
-    particleCount: state.particleCount,
-    panelMode: state.panelMode
-  }));
+  const mode = useSettingsStore((state) => state.mode);
+  const speed = useSettingsStore((state) => state.speed);
+  const sound = useSettingsStore((state) => state.sound);
+  const showTrails = useSettingsStore((state) => state.showTrails);
+  const particleCount = useSettingsStore((state) => state.particleCount);
+  const particleSize = useSettingsStore((state) => state.particleSize);
+  const particleSpeed = useSettingsStore((state) => state.particleSpeed);
+  const colorScheme = useSettingsStore((state) => state.colorScheme);
 
   useEffect(() => {
     if (particleSystemRef.current) {
-      particleSystemRef.current.updateSettings(settings);
+      particleSystemRef.current.updateSettings({
+        mode: mode as any,
+        subMode: 'spiral' as any,
+        speed,
+        sound: sound as any,
+        showTrails,
+        particleCount,
+        particleSize,
+        particleSpeed,
+        colorScheme
+      });
     }
-  }, [settings, particleSystemRef]);
+  }, [mode, speed, sound, showTrails, particleCount, particleSize, particleSpeed, colorScheme, particleSystemRef]);
 };

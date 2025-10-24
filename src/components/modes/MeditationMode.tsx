@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Slider } from '../ui/Slider';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '../ui/Select';
+import { Heart, Play, Pause, RotateCcw, Timer, Wind } from 'lucide-react';
 
 interface MeditationModeProps {
   isActive: boolean;
@@ -12,6 +18,7 @@ const MeditationMode: React.FC<MeditationModeProps> = ({ isActive }) => {
   const [sessionTime, setSessionTime] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [breathPattern, setBreathPattern] = useState<'4-4-4-4' | '4-7-8' | 'box'>('4-4-4-4');
+  const [sessionDuration, setSessionDuration] = useState(10);
   
   const intervalRef = useRef<NodeJS.Timeout>();
   const sessionRef = useRef<NodeJS.Timeout>();
@@ -21,48 +28,44 @@ const MeditationMode: React.FC<MeditationModeProps> = ({ isActive }) => {
   const setSpeed = useSettingsStore((state) => state.setSpeed);
 
   const patterns = {
-    '4-4-4-4': { inhale: 4, hold: 4, exhale: 4, pause: 4 },
-    '4-7-8': { inhale: 4, hold: 7, exhale: 8, pause: 0 },
-    'box': { inhale: 4, hold: 4, exhale: 4, pause: 4 }
+    '4-4-4-4': { inhale: 4, hold: 4, exhale: 4, pause: 4, name: 'Квадратное дыхание' },
+    '4-7-8': { inhale: 4, hold: 7, exhale: 8, pause: 0, name: '4-7-8 техника' },
+    'box': { inhale: 4, hold: 4, exhale: 4, pause: 4, name: 'Бокс дыхание' }
   };
 
   const currentPattern = patterns[breathPattern];
 
-  useEffect(() => {
-    if (isActive) {
-      setMode('smooth');
-      setSound('theta');
-      setSpeed(0.5);
-    }
-  }, [isActive, setMode, setSound, setSpeed]);
+  const phaseColors = {
+    inhale: '#4caf50',
+    hold: '#ff9800', 
+    exhale: '#2196f3',
+    pause: '#9c27b0'
+  };
+
+  const phaseLabels = {
+    inhale: 'Вдох',
+    hold: 'Задержка',
+    exhale: 'Выдох',
+    pause: 'Пауза'
+  };
 
   useEffect(() => {
     if (isSessionActive) {
-      sessionRef.current = setInterval(() => {
-        setSessionTime(prev => prev + 1);
-      }, 1000);
+      startBreathingCycle();
     } else {
-      if (sessionRef.current) {
-        clearInterval(sessionRef.current);
-      }
+      stopBreathingCycle();
     }
-
+    
     return () => {
-      if (sessionRef.current) {
-        clearInterval(sessionRef.current);
-      }
+      stopBreathingCycle();
     };
-  }, [isSessionActive]);
+  }, [isSessionActive, breathPattern]);
 
   const startBreathingCycle = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
     let phaseIndex = 0;
-    const phases: Array<keyof typeof currentPattern> = ['inhale', 'hold', 'exhale', 'pause'];
+    const phases: Array<'inhale' | 'hold' | 'exhale' | 'pause'> = ['inhale', 'hold', 'exhale', 'pause'];
     
-    const cyclePhase = () => {
+    const cycle = () => {
       const currentPhase = phases[phaseIndex];
       setBreathPhase(currentPhase);
       
@@ -70,35 +73,45 @@ const MeditationMode: React.FC<MeditationModeProps> = ({ isActive }) => {
       
       setTimeout(() => {
         phaseIndex = (phaseIndex + 1) % phases.length;
-        
-        if (currentPhase === 'exhale') {
-          setBreathCount(prev => prev + 1);
-        }
-        
-        if (phaseIndex === 0) {
-          // Новый цикл
-          cyclePhase();
-        } else {
-          cyclePhase();
+        if (isSessionActive) {
+          if (phaseIndex === 0) {
+            setBreathCount(prev => prev + 1);
+          }
+          cycle();
         }
       }, duration);
     };
+    
+    cycle();
+  };
 
-    cyclePhase();
+  const stopBreathingCycle = () => {
+    if (intervalRef.current) {
+      clearTimeout(intervalRef.current);
+    }
   };
 
   const startSession = () => {
     setIsSessionActive(true);
-    setBreathCount(0);
     setSessionTime(0);
-    startBreathingCycle();
+    
+    sessionRef.current = setInterval(() => {
+      setSessionTime(prev => prev + 1);
+    }, 1000);
   };
 
   const stopSession = () => {
     setIsSessionActive(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    if (sessionRef.current) {
+      clearInterval(sessionRef.current);
     }
+  };
+
+  const resetSession = () => {
+    stopSession();
+    setBreathCount(0);
+    setSessionTime(0);
+    setBreathPhase('inhale');
   };
 
   const formatTime = (seconds: number) => {
@@ -111,200 +124,235 @@ const MeditationMode: React.FC<MeditationModeProps> = ({ isActive }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center"
-      style={{
-        background: 'linear-gradient(135deg, rgba(0, 229, 204, 0.1), rgba(30, 136, 229, 0.1))',
-        backdropFilter: 'blur(10px)'
-      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
     >
-      <div className="max-w-md mx-4 text-center">
-        {/* Заголовок */}
-        <motion.h2
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-2xl font-bold mb-8"
-          style={{ color: '#00e5cc' }}
-        >
-          Режим медитации
-        </motion.h2>
-
-        {/* Визуализация дыхания */}
-        <div className="relative mb-8">
-          <motion.div
-            animate={{
-              scale: breathPhase === 'inhale' ? [1, 1.3] : 
-                     breathPhase === 'hold' ? 1.3 :
-                     breathPhase === 'exhale' ? [1.3, 1] : 1,
-              opacity: breathPhase === 'pause' ? [1, 0.7, 1] : 1
-            }}
-            transition={{
-              duration: currentPattern[breathPhase],
-              ease: breathPhase === 'inhale' ? 'easeOut' : 
-                    breathPhase === 'exhale' ? 'easeIn' : 'linear',
-              repeat: breathPhase === 'pause' ? Infinity : 0
-            }}
-            className="w-48 h-48 mx-auto rounded-full flex items-center justify-center"
-            style={{
-              background: `radial-gradient(circle, ${
-                breathPhase === 'inhale' ? '#00e5cc' :
-                breathPhase === 'hold' ? '#66ff99' :
-                breathPhase === 'exhale' ? '#1e88e5' : '#00b4d8'
-              }20, transparent)`,
-              border: `3px solid ${
-                breathPhase === 'inhale' ? '#00e5cc' :
-                breathPhase === 'hold' ? '#66ff99' :
-                breathPhase === 'exhale' ? '#1e88e5' : '#00b4d8'
-              }40`
-            }}
-          >
+      {/* Основная карточка медитации */}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            Медитативный режим
+          </CardTitle>
+          <CardDescription>
+            Управляемое дыхание для глубокой релаксации
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center space-y-6">
+            {/* Индикатор дыхания */}
             <motion.div
               animate={{
-                scale: breathPhase === 'inhale' ? [0.8, 1.2] : 
-                       breathPhase === 'hold' ? 1.2 :
-                       breathPhase === 'exhale' ? [1.2, 0.8] : 0.8
+                scale: breathPhase === 'inhale' ? [1, 1.2, 1] : 1,
+                opacity: isSessionActive ? 1 : 0.6
               }}
-              transition={{
-                duration: currentPattern[breathPhase],
-                ease: breathPhase === 'inhale' ? 'easeOut' : 
-                      breathPhase === 'exhale' ? 'easeIn' : 'linear'
-              }}
-              className="w-32 h-32 rounded-full flex items-center justify-center"
+              transition={{ duration: 2, repeat: isSessionActive ? Infinity : 0 }}
+              className="relative mx-auto w-32 h-32 rounded-full flex items-center justify-center"
               style={{
-                background: `linear-gradient(135deg, ${
-                  breathPhase === 'inhale' ? '#00e5cc' :
-                  breathPhase === 'hold' ? '#66ff99' :
-                  breathPhase === 'exhale' ? '#1e88e5' : '#00b4d8'
-                }, ${
-                  breathPhase === 'inhale' ? '#00e5cc80' :
-                  breathPhase === 'hold' ? '#66ff9980' :
-                  breathPhase === 'exhale' ? '#1e88e580' : '#00b4d880'
-                })`,
-                boxShadow: `0 0 40px ${
-                  breathPhase === 'inhale' ? '#00e5cc' :
-                  breathPhase === 'hold' ? '#66ff99' :
-                  breathPhase === 'exhale' ? '#1e88e5' : '#00b4d8'
-                }40`
+                background: `linear-gradient(135deg, ${phaseColors[breathPhase]}20, ${phaseColors[breathPhase]}10)`,
+                border: `3px solid ${phaseColors[breathPhase]}`
               }}
             >
-              <span className="text-4xl">
-                {breathPhase === 'inhale' ? '🌬️' :
-                 breathPhase === 'hold' ? '⏸️' :
-                 breathPhase === 'exhale' ? '💨' : '🧘'}
-              </span>
-            </motion.div>
-          </motion.div>
-
-          {/* Индикатор фазы */}
-          <motion.div
-            key={breathPhase}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4"
-          >
-            <div 
-              className="text-lg font-medium"
-              style={{ 
-                color: breathPhase === 'inhale' ? '#00e5cc' :
-                       breathPhase === 'hold' ? '#66ff99' :
-                       breathPhase === 'exhale' ? '#1e88e5' : '#00b4d8'
-              }}
-            >
-              {breathPhase === 'inhale' ? 'Вдох' :
-               breathPhase === 'hold' ? 'Задержка' :
-               breathPhase === 'exhale' ? 'Выдох' : 'Пауза'}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Статистика */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="text-center">
-            <div className="text-2xl font-bold" style={{ color: '#00e5cc' }}>
-              {breathCount}
-            </div>
-            <div className="text-sm text-white/70">Циклов</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold" style={{ color: '#66ff99' }}>
-              {formatTime(sessionTime)}
-            </div>
-            <div className="text-sm text-white/70">Время</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold" style={{ color: '#1e88e5' }}>
-              {breathPattern}
-            </div>
-            <div className="text-sm text-white/70">Паттерн</div>
-          </div>
-        </div>
-
-        {/* Паттерны дыхания */}
-        <div className="mb-8">
-          <div className="text-sm text-white/70 mb-3">Паттерн дыхания:</div>
-          <div className="flex justify-center space-x-2">
-            {Object.keys(patterns).map((pattern) => (
-              <button
-                key={pattern}
-                onClick={() => setBreathPattern(pattern as keyof typeof patterns)}
-                className={`px-3 py-1 rounded-lg text-xs transition-all ${
-                  breathPattern === pattern
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10'
-                }`}
+              <motion.div
+                animate={{
+                  scale: breathPhase === 'inhale' ? [1, 1.1, 1] : 1,
+                  rotate: breathPhase === 'hold' ? [0, 5, -5, 0] : 0
+                }}
+                transition={{ duration: 1, repeat: isSessionActive ? Infinity : 0 }}
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${phaseColors[breathPhase]}, ${phaseColors[breathPhase]}cc)`,
+                  color: 'white'
+                }}
               >
-                {pattern}
-              </button>
-            ))}
+                <Wind className="w-8 h-8" />
+              </motion.div>
+            </motion.div>
+
+            {/* Текущая фаза */}
+            <div className="space-y-2">
+              <motion.h3
+                key={breathPhase}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-2xl font-bold"
+                style={{ color: phaseColors[breathPhase] }}
+              >
+                {phaseLabels[breathPhase]}
+              </motion.h3>
+              <p className="text-text-secondary">
+                {currentPattern.name}
+              </p>
+            </div>
+
+            {/* Статистика */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {breathCount}
+                </div>
+                <div className="text-sm text-text-tertiary">Циклов</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {formatTime(sessionTime)}
+                </div>
+                <div className="text-sm text-text-tertiary">Время</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-text-primary">
+                  {currentPattern[breathPhase]}
+                </div>
+                <div className="text-sm text-text-tertiary">Секунд</div>
+              </div>
+            </div>
+
+            {/* Управление */}
+            <div className="flex gap-3 justify-center">
+              {!isSessionActive ? (
+                <Button
+                  onClick={startSession}
+                  className="flex items-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #4caf50, #66ff99)',
+                    color: 'white'
+                  }}
+                >
+                  <Play className="w-4 h-4" />
+                  Начать
+                </Button>
+              ) : (
+                <Button
+                  onClick={stopSession}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Pause className="w-4 h-4" />
+                  Пауза
+                </Button>
+              )}
+              
+              <Button
+                onClick={resetSession}
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Сброс
+              </Button>
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Управление */}
-        <div className="flex justify-center space-x-4">
-          {!isSessionActive ? (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={startSession}
-              className="px-8 py-3 rounded-xl font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #00e5cc, #66ff99)',
-                color: 'white',
-                boxShadow: '0 4px 20px rgba(0, 229, 204, 0.4)'
-              }}
-            >
-              Начать медитацию
-            </motion.button>
-          ) : (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={stopSession}
-              className="px-8 py-3 rounded-xl font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #ff6b6b, #ff8e8e)',
-                color: 'white',
-                boxShadow: '0 4px 20px rgba(255, 107, 107, 0.4)'
-              }}
-            >
-              Завершить
-            </motion.button>
-          )}
-        </div>
+      {/* Настройки */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Паттерн дыхания */}
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Timer className="w-4 h-4" />
+              Паттерн дыхания
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={breathPattern} onValueChange={(value: any) => setBreathPattern(value)}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Badge variant="glass" style={{ color: phaseColors[breathPhase] }}>
+                    {currentPattern.name}
+                  </Badge>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(patterns).map(([key, pattern]) => (
+                  <SelectItem key={key} value={key}>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-medium">{pattern.name}</div>
+                      <div className="text-xs text-text-tertiary">
+                        {pattern.inhale}-{pattern.hold}-{pattern.exhale}-{pattern.pause}
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-        {/* Инструкции */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8 text-sm text-white/60"
-        >
-          Следуйте за визуальным индикатором дыхания.<br />
-          Дышите медленно и глубоко, синхронизируя с анимацией.
-        </motion.div>
+        {/* Длительность сессии */}
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Timer className="w-4 h-4" />
+              Длительность сессии
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Slider
+              min={5}
+              max={60}
+              step={5}
+              value={sessionDuration}
+              onChange={(e) => setSessionDuration(parseInt(e.target.value))}
+              label="Минуты"
+              unit=" мин"
+              description={`${sessionDuration} минут медитации`}
+            />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Быстрые настройки */}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle className="text-base">Быстрые настройки</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('smooth');
+                setSound('theta');
+                setSpeed(0.5);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Heart className="w-5 h-5 text-red-500" />
+              <span className="text-sm">Медитация</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('smooth');
+                setSound('rain');
+                setSpeed(0.8);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Wind className="w-5 h-5 text-blue-500" />
+              <span className="text-sm">Релакс</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMode('smooth');
+                setSound('ocean');
+                setSpeed(0.3);
+              }}
+              className="flex flex-col items-center gap-2 p-4"
+            >
+              <Timer className="w-5 h-5 text-green-500" />
+              <span className="text-sm">Сон</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FLOW v6 - Gesture UI</title>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js (Audio) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <!-- Three.js (WebGL) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body, html {
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: #05050A; color: white;
+            font-family: 'Inter', -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none; /* Запрещаем скролл страницы жестами */
+        }
+        
+        /* --- Контейнеры Режимов --- */
+        .animation-view {
+            width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0;
+            opacity: 0; /* Скрыты по умолчанию */
+            pointer-events: none; /* Неактивны по умолчанию */
+            transition: opacity 0.5s ease-in-out;
+            z-index: 1;
+        }
+        .animation-view.active {
+            opacity: 1;
+            pointer-events: auto; /* Активный режим получает события */
+            z-index: 2; /* Активный режим поверх */
+        }
+
+        /* --- 1. Reflect (WebGL Shader) --- */
+        /* Использует #webgl-canvas */
+
+        /* --- 2. Breathe (CSS) --- */
+        #breathe-view { display: flex; align-items: center; justify-content: center; }
+        .breathe-container { position: relative; width: 300px; height: 300px; filter: blur(25px); animation: breathe-rotate 16s linear infinite; }
+        .breathe-petal { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, #a78bfa 0%, rgba(167, 139, 250, 0) 70%); left: 50%; top: 50%; margin-left: -75px; margin-top: -75px; transform-origin: center center; animation: breathe-scale 8s infinite ease-in-out; opacity: 0.7; }
+        @keyframes breathe-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes breathe-scale { 0%, 100% { transform: scale(0.6); opacity: 0.5; } 50% { transform: scale(1); opacity: 1; } }
+
+        /* --- 3-6 & NEW Zen (WebGL) --- */
+        #webgl-canvas { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 0; /* WebGL всегда под UI */}
+        
+        /* --- 7. Aura (CSS) --- */
+        #aura-view { position: relative; }
+        .aura-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: aura-morph 20s infinite ease-in-out alternate; }
+        @keyframes aura-morph { 0% { transform: scale(1) translate(0, 0) rotate(0deg); border-radius: 50% 60% 70% 40%; } 100% { transform: scale(1.5) translate(50px, -50px) rotate(180deg); border-radius: 70% 40% 50% 60%; } }
+        
+        /* --- 8. Matrix (2D Canvas) --- */
+        #matrix-canvas { width: 100%; height: 100%; }
+
+        /* --- НОВЫЙ UI: Индикаторы и Панель Настроек --- */
+        #mode-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        .indicator-dot.active {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #settings-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            max-height: 40vh; /* Макс высота панели */
+            background: rgba(15, 15, 25, 0.8);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 0 0;
+            z-index: 99;
+            transform: translateY(100%); /* Спрятано */
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            padding: 20px;
+            box-sizing: border-box;
+            color: #eee;
+            overflow-y: auto;
+        }
+        #settings-overlay.open {
+            transform: translateY(0);
+        }
+        #settings-overlay h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; text-align: center; }
+        .setting { margin-bottom: 16px; }
+        .setting label { display: block; font-size: 0.75rem; color: #aaa; margin-bottom: 6px; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #a78bfa; border-radius: 50%; cursor: pointer; }
+        input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; background: #a78bfa; border-radius: 50%; cursor: pointer; }
+        .setting button { width: 100%; padding: 8px; background: #a78bfa; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+    
+    </style>
+</head>
+<body>
+    
+    <!-- === Контейнеры для всех режимов === -->
+    <div id="reflect-view" class="animation-view active"></div>
+    <div id="breathe-view" class="animation-view">
+        <div class="breathe-container">
+            <!-- Лепестки -->
+            <div class="breathe-petal" style="transform: rotate(0deg) translateX(40px) scale(0.6); animation-delay: -1s;"></div>
+            <div class="breathe-petal" style="transform: rotate(60deg) translateX(40px) scale(0.6); animation-delay: -2s;"></div>
+            <div class="breathe-petal" style="transform: rotate(120deg) translateX(40px) scale(0.6); animation-delay: -3s;"></div>
+            <div class="breathe-petal" style="transform: rotate(180deg) translateX(40px) scale(0.6); animation-delay: -4s;"></div>
+            <div class="breathe-petal" style="transform: rotate(240deg) translateX(40px) scale(0.6); animation-delay: -5s;"></div>
+            <div class="breathe-petal" style="transform: rotate(300deg) translateX(40px) scale(0.6); animation-delay: -6s;"></div>
+        </div>
+    </div>
+    <div id="toroid-view" class="animation-view"></div>
+    <div id="zen-view" class="animation-view"></div>
+    <div id="cymatics-view" class="animation-view"></div>
+    <div id="weaver-view" class="animation-view"></div>
+    <div id="starfield-view" class="animation-view"></div>
+    <div id="orbs-view" class="animation-view"></div>
+    <div id="aura-view" class="animation-view">
+        <div class="aura-blob" style="width: 500px; height: 500px; top: 10%; left: 10%; background: #a78bfa; animation-duration: 20s;"></div>
+        <div class="aura-blob" style="width: 400px; height: 400px; top: 30%; left: 40%; background: #7c3aed; animation-duration: 15s; animation-delay: -5s;"></div>
+        <div class="aura-blob" style="width: 300px; height: 300px; top: 50%; left: 20%; background: #6d28d9; animation-duration: 25s; animation-delay: -10s;"></div>
+    </div>
+    <div id="matrix-view" class="animation-view">
+        <canvas id="matrix-canvas"></canvas>
+    </div>
+    
+    <!-- Единый холст для всех WebGL-приложений -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- === UI === -->
+    <div id="mode-indicator"></div>
+    <div id="settings-overlay">
+        <h3 id="settings-title">Настройки</h3>
+        <div id="settings-content"></div>
+    </div>
+    
+    <!-- 
+    =====================================================================
+    ШЕЙДЕРЫ (GLSL)
+    =====================================================================
+    -->
+    
+    <!-- 1. НОВЫЙ Reflect (Optimized Fluid Shader) -->
+    <script id="reflect-fs" type="x-shader/x-fragment">
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform float u_mouse_vel; // Скорость (энергия)
+        uniform float u_complexity; // Настройка сложности
+        uniform float u_speed; // Настройка скорости
+        
+        // --- FBM --- (тот же, что раньше)
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+        float snoise(vec2 v) {
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+            vec2 i = floor(v + dot(v, C.yy)); vec2 x0 = v - i + dot(i, C.xx);
+            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec2 x1 = x0.xy + C.xx - i1; vec2 x2 = x0.xy + C.zz;
+            i = mod289(i); vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x1, x1), dot(x2, x2)), 0.0);
+            m = m * m; m = m * m; vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5); vec3 a0 = x - ox;
+            m *= (1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h));
+            vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * vec2(x1.x, x2.x) + h.yz * vec2(x1.y, x2.y);
+            return 130.0 * dot(m, g);
+        }
+        float fbm(vec2 v, float complexity) {
+            float total = 0.0; float amplitude = 0.5; float frequency = 1.0;
+            for (int i = 0; i < 7; i++) {
+                if (float(i) > complexity) break; 
+                total += snoise(v * frequency) * amplitude;
+                frequency *= 2.0; amplitude *= 0.5;
+            } return total;
+        }
+
+        void main() {
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+            float time = u_time * u_speed * 0.1;
+            float complexity = u_complexity;
+            float energy = u_mouse_vel * 0.01; // Влияние скорости движения
+
+            // 1. Искажение координат (warping)
+            // Используем сам FBM, чтобы исказить координаты для следующего FBM
+            // Это создает более "жидкий" и органичный эффект
+            vec2 q = vec2(fbm(uv + time * 0.1, complexity), 
+                          fbm(uv + vec2(5.2, 1.3) + time * 0.15, complexity));
+
+            // 2. Основной узор (FBM)
+            // Используем искаженные координаты + добавляем энергию
+            vec2 r = vec2(fbm(uv + q * 1.0 + time * 0.2 + energy, complexity),
+                          fbm(uv + q * 1.2 + vec2(1.7, 9.2) + time * 0.18 + energy, complexity));
+
+            // 3. Финальное значение шума
+            float noise = fbm(uv + r * 0.5, complexity); // от -1 до 1
+
+            // 4. Окрашивание (глубокие фиолетово-красные тона)
+            vec3 color = vec3(0.0);
+            float value = smoothstep(-0.1, 0.1, noise); // Контраст
+
+            vec3 colorA = vec3(0.01, 0.0, 0.02); // Фон (Багрово-черный)
+            vec3 colorB = vec3(0.1, 0.0, 0.3);   // Фиолетовый
+            vec3 colorC = vec3(0.8, 0.1, 0.2);   // Красный
+            vec3 colorD = vec3(1.0, 0.3, 0.1);   // Ярко-красный/Оранжевый
+
+            color = mix(colorA, colorB, smoothstep(0.0, 0.2, value));
+            color = mix(color, colorC, smoothstep(0.2, 0.6, value));
+            color = mix(color, colorD, smoothstep(0.6, 0.8, value));
+            
+            gl_FragColor = vec4(color, 1.0);
+        }
+    </script>
+    
+    <!-- Cymatics 2.0 (Shaders) - без изменений -->
+    <script id="cymatics-fs" type="x-shader/x-fragment">uniform float u_time; uniform vec3 u_color; uniform float u_frequencies[5]; uniform float u_amplitudes[5]; varying vec2 vUv; void main() { float total_wave = 0.0; float total_amplitude = 0.0; for(int i=0; i < 5; i++) { if (u_amplitudes[i] > 0.0) { float freq = u_frequencies[i] * 0.01; float amp = u_amplitudes[i]; total_wave += sin(vUv.x * freq * 10.0 + u_time) * cos(vUv.y * freq * 10.0 + u_time) * amp; total_amplitude += amp; } } if (total_amplitude > 0.0) { total_wave /= total_amplitude; } float value = smoothstep(-0.5, 0.5, total_wave); gl_FragColor = vec4(u_color * value, 1.0); }</script>
+    <script id="cymatics-vs" type="x-shader/x-vertex">varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }</script>
+    
+    <!-- НОВЫЙ Zen (Fluid Shader) -->
+    <script id="zen-fs" type="x-shader/x-fragment">
+        uniform vec2 u_resolution;
+        uniform float u_time;
+        uniform vec2 u_mouse_pos;
+        uniform float u_mouse_vel;
+        uniform float u_viscosity; // Вязкость
+        
+        // --- FBM --- (тот же)
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+        float snoise(vec2 v) { const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439); vec2 i = floor(v + dot(v, C.yy)); vec2 x0 = v - i + dot(i, C.xx); vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0); vec2 x1 = x0.xy + C.xx - i1; vec2 x2 = x0.xy + C.zz; i = mod289(i); vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0)); vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x1, x1), dot(x2, x2)), 0.0); m = m * m; m = m * m; vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5; vec3 ox = floor(x + 0.5); vec3 a0 = x - ox; m *= (1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h)); vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * vec2(x1.x, x2.x) + h.yz * vec2(x1.y, x2.y); return 130.0 * dot(m, g); }
+        float fbm(vec2 v) { float total = 0.0; float amplitude = 0.5; float frequency = 1.0; for (int i = 0; i < 5; i++) { total += snoise(v * frequency) * amplitude; frequency *= 2.0; amplitude *= 0.5; } return total; }
+
+        void main() {
+            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+            vec2 mouse = u_mouse_pos / u_resolution.xy;
+            float time = u_time * 0.1;
+            float viscosity = u_viscosity; // 0.1 (быстро) - 1.0 (медленно)
+            
+            // 1. Создаем рябь от мыши
+            float dist_to_mouse = length(uv - mouse);
+            float ripple = (u_mouse_vel * 0.01) * exp(-dist_to_mouse * 20.0) * sin(dist_to_mouse * 50.0 - u_time * 5.0 / viscosity);
+            
+            // 2. Искажаем шум этой рябью
+            vec2 noisy_uv = uv + ripple * 0.05;
+            
+            // 3. Базовый узор "жидкости" (медленный шум)
+            float noise = fbm(noisy_uv * 2.0 + time * 0.1); // от -1 до 1
+            float value = smoothstep(-0.3, 0.3, noise);
+            
+            // 4. Окрашивание (темная, "нефтяная" палитра)
+            vec3 colorA = vec3(0.01, 0.01, 0.03); // Почти черный
+            vec3 colorB = vec3(0.1, 0.1, 0.3);   // Темно-синий
+            vec3 colorC = vec3(0.3, 0.2, 0.5);   // Фиолетовый отблеск
+            
+            vec3 color = mix(colorA, colorB, value);
+            // Добавляем рябь как блик
+            color += colorC * smoothstep(0.0, 0.1, abs(ripple)); 
+            
+            gl_FragColor = vec4(color, 1.0);
+        }
+    </script>
+    
+    <!-- 
+    =====================================================================
+    ОСНОВНОЙ JAVASCRIPT
+    =====================================================================
+    -->
+    <script>
+        // --- Глобальные переменные ---
+        let activeMode = null;
+        let activeModeName = 'reflect';
+        let currentModeIndex = 0; // Для свайпов
+        const modeOrder = ['reflect', 'breathe', 'toroid', 'zen', 'cymatics', 'weaver', 'starfield', 'orbs', 'aura', 'matrix'];
+        
+        let audioState = { isReady: false, polySynth: null, analyser: null };
+        let raycaster, mouse = new THREE.Vector2();
+        let lastMousePos = { x: 0, y: 0, vel: 0.0, lastTime: 0 }; // Для расчета скорости
+        
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const settingsTitle = document.getElementById('settings-title');
+        const settingsContent = document.getElementById('settings-content');
+        const modeIndicator = document.getElementById('mode-indicator');
+        const webglCanvas = document.getElementById('webgl-canvas'); // Единый холст
+        let webglRenderer, webglScene, webglCamera, webglClock; // Глобальные для WebGL
+
+        const modeInstances = {};
+
+        // --- Настройки по умолчанию ---
+        const settings = {
+            reflect: { speed: 1.0, complexity: 5.0 },
+            breathe: { speed: 8.0, blur: 25 },
+            toroid: { speed: 0.5, radius: 15.0, count: 5000, size: 0.1 },
+            zen: { viscosity: 0.5, brushSize: 0.1 }, // brushSize теперь для шейдера
+            cymatics: { scale: 'Pentatonic', baseNote: 'C3' },
+            weaver: { gravity: 1.0, damping: 0.95, count: 3000, size: 0.1 },
+            starfield: { speed: 1.0, count: 5000, size: 0.1 },
+            orbs: { speed: 0.5, count: 200, size: 0.2 },
+            aura: { speed: 20.0, blur: 80.0 },
+            matrix: { speed: 1.0, fontSize: 16 }
+        };
+        
+        // --- Аудио Контекст ---
+        async function initAudio() { /* ... (без изменений) ... */ 
+            if (audioState.isReady) return;
+            try {
+                if (typeof window.Tone === 'undefined') { console.error("Tone.js не загружен."); return; }
+                await window.Tone.start();
+                const reverb = new window.Tone.Reverb({ decay: 10, wet: 0.5 }).toDestination();
+                await reverb.generate();
+                const polySynth = new window.Tone.PolySynth(window.Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.5, decay: 0.1, sustain: 0.8, release: 1.0 }
+                }).connect(reverb);
+                const analyser = new window.Tone.Analyser('fft', 32);
+                polySynth.connect(analyser);
+                audioState = { isReady: true, polySynth, analyser };
+                console.log("Audio Engine Ready.");
+            } catch (e) { console.error("Audio failed to start:", e); }
+        }
+        
+        // --- Менеджер Режимов ---
+        function switchMode(index, direction = 0) { // direction: -1 left, 1 right
+            if (index < 0 || index >= modeOrder.length) return; // Границы
+
+            const newModeName = modeOrder[index];
+            
+            // 1. Анимация перехода (если есть direction)
+            // TODO: Добавить анимацию сдвига в CSS
+
+            // 2. Остановить и скрыть старый режим
+            if (activeMode && activeMode.stop) activeMode.stop();
+            if (activeModeName) {
+                document.getElementById(`${activeModeName}-view`).classList.remove('active');
+            }
+            
+            // 3. Активировать новый режим
+            activeModeName = newModeName;
+            currentModeIndex = index;
+            const view = document.getElementById(`${activeModeName}-view`);
+            view.classList.add('active');
+            
+            // 4. Инициализировать (если нужно) и запустить
+            if (!modeInstances[activeModeName]) {
+                const initFunction = modeInitializers[activeModeName];
+                if (initFunction) {
+                    modeInstances[activeModeName] = initFunction(view);
+                } else {
+                    console.error(`Нет инициализатора для ${newModeName}`);
+                    return;
+                }
+            }
+            
+            activeMode = modeInstances[activeModeName];
+            if (activeMode && activeMode.start) {
+                activeMode.start();
+            }
+            
+            // 5. Обновить индикаторы
+            updateModeIndicator();
+            
+            // 6. Закрыть настройки, если были открыты
+            settingsOverlay.classList.remove('open');
+        }
+
+        // --- Инициализаторы для каждого режима ---
+        // Возвращают объект { settings, start(), stop(), handleInteraction(e), populateSettings(container), resize() }
+        const modeInitializers = {
+            'reflect': (view) => {
+                // Использует глобальный WebGL renderer
+                let material;
+                function init() {
+                    const geometry = new THREE.PlaneGeometry(2, 2);
+                    material = new THREE.ShaderMaterial({
+                        fragmentShader: document.getElementById('reflect-fs').textContent,
+                        uniforms: {
+                            u_time: { value: 0.0 },
+                            u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                            u_mouse_vel: { value: 0.0 },
+                            u_complexity: { value: settings.reflect.complexity },
+                            u_speed: { value: settings.reflect.speed }
+                        }
+                    });
+                    const quad = new THREE.Mesh(geometry, material);
+                    quad.frustumCulled = false; // Важно для full-screen quad
+                    webglScene.add(quad);
+                }
+                function start() { init(); } // Инициализация при старте
+                function stop() { webglScene.clear(); } // Очистка сцены при остановке
+                function update(time) {
+                    if (!material) return;
+                    material.uniforms.u_time.value = time;
+                    material.uniforms.u_mouse_vel.value = lastMousePos.vel;
+                    renderer.render(webglScene, new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1));
+                }
+                function resize(w, h) {
+                    if (material) material.uniforms.u_resolution.value.set(w, h);
+                }
+                function populate(container) {
+                     container.innerHTML = `
+                        <div class="setting"><label>Скорость (${settings.reflect.speed.toFixed(1)})</label><input type="range" data-setting="speed" min="0.1" max="5" step="0.1" value="${settings.reflect.speed}"></div>
+                        <div class="setting"><label>Сложность (${settings.reflect.complexity.toFixed(0)})</label><input type="range" data-setting="complexity" min="3" max="7" step="1" value="${settings.reflect.complexity}"></div>
+                    `;
+                    container.querySelector('[data-setting="speed"]').addEventListener('input', e => {
+                        settings.reflect.speed = parseFloat(e.target.value);
+                        material.uniforms.u_speed.value = settings.reflect.speed;
+                        e.target.previousElementSibling.textContent = `Скорость (${settings.reflect.speed.toFixed(1)})`;
+                    });
+                    container.querySelector('[data-setting="complexity"]').addEventListener('input', e => {
+                        settings.reflect.complexity = parseFloat(e.target.value);
+                        material.uniforms.u_complexity.value = settings.reflect.complexity;
+                         e.target.previousElementSibling.textContent = `Сложность (${settings.reflect.complexity.toFixed(0)})`;
+                    });
+                }
+                return { settings: settings.reflect, start, stop, update, resize, populateSettings: populate };
+            },
+            'breathe': (view) => {
+                // CSS, почти пустой
+                return { settings: settings.breathe, start: ()=>{}, stop: ()=>{}, populateSettings: (container)=>{/*...*/}};
+            },
+            'toroid': (view) => {
+                // Использует глобальный WebGL
+                let particles, camera, s = settings.toroid;
+                let isDragging = false, previousMousePos = { x: 0, y: 0 };
+
+                function init() {
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 30;
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(s.count * 3);
+                    const data = []; const R = s.radius, r = 5.0;
+                    for (let i = 0; i < s.count; i++) {
+                        const u = Math.random() * Math.PI * 2, v = Math.random() * Math.PI * 2;
+                        data.push({ u, v, speed: 0.1 + Math.random() * 0.4 });
+                        positions[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+                        positions[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+                        positions[i * 3 + 2] = r * Math.sin(v);
+                    }
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    geometry.userData = { data, R, r };
+                    const material = new THREE.PointsMaterial({ color: '#a78bfa', size: s.size });
+                    particles = new THREE.Points(geometry, material);
+                    webglScene.add(particles);
+                }
+                 function start() { init(); }
+                 function stop() { webglScene.clear(); }
+                 function update() {
+                    const data = particles.geometry.userData.data;
+                    const positions = particles.geometry.attributes.position.array;
+                    const speed = s.speed * 0.1;
+                    const R = s.radius, r = particles.geometry.userData.r;
+                    for(let i=0; i < data.length; i++) {
+                        data[i].u += data[i].speed * speed; data[i].v += 0.01 * speed;
+                        const u = data[i].u, v = data[i].v;
+                        positions[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+                        positions[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+                        positions[i * 3 + 2] = r * Math.sin(v);
+                    }
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    renderer.render(webglScene, camera);
+                 }
+                 function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
+                 function handleInteraction(event) {
+                    if (event.type === 'mousedown' || event.type === 'touchstart') {
+                        isDragging = true;
+                        previousMousePos.x = event.clientX || event.touches[0].clientX;
+                        previousMousePos.y = event.clientY || event.touches[0].clientY;
+                    }
+                    if (event.type === 'mouseup' || event.type === 'touchend') isDragging = false;
+                    if ((event.type === 'mousemove' || event.type === 'touchmove') && isDragging) {
+                        const clientX = event.clientX || event.touches[0].clientX;
+                        const clientY = event.clientY || event.touches[0].clientY;
+                        const deltaX = clientX - previousMousePos.x, deltaY = clientY - previousMousePos.y;
+                        particles.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), deltaY * 0.01);
+                        particles.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX * 0.01);
+                        previousMousePos.x = clientX; previousMousePos.y = clientY;
+                    }
+                 }
+                return { settings: s, start, stop, update, resize, handleInteraction };
+            },
+            'zen': (view) => {
+                 // Использует глобальный WebGL
+                let material, camera, s = settings.zen;
+                let stones = [];
+
+                function init() {
+                    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); // Шейдер 2D
+                    const geometry = new THREE.PlaneGeometry(2, 2);
+                    material = new THREE.ShaderMaterial({
+                        fragmentShader: document.getElementById('zen-fs').textContent,
+                        uniforms: {
+                            u_time: { value: 0.0 },
+                            u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                            u_mouse_pos: { value: new THREE.Vector2(-1, -1) }, // Вне экрана
+                            u_mouse_vel: { value: 0.0 },
+                            u_viscosity: { value: s.viscosity }
+                        }
+                    });
+                    const quad = new THREE.Mesh(geometry, material);
+                    quad.frustumCulled = false;
+                    webglScene.add(quad);
+                    
+                    // TODO: Добавить 3D-камни поверх 2D-шейдера (потребует другой камеры)
+                }
+                function start() { init(); }
+                function stop() { webglScene.clear(); }
+                function update(time) {
+                    material.uniforms.u_time.value = time;
+                    material.uniforms.u_mouse_vel.value = lastMousePos.vel;
+                    // Обновляем позицию мыши только если есть скорость (был клик/свайп)
+                    if (lastMousePos.vel > 0.1) {
+                         material.uniforms.u_mouse_pos.value.set(lastMousePos.x, window.innerHeight - lastMousePos.y);
+                    }
+                    renderer.render(webglScene, camera);
+                }
+                function resize(w, h) { material.uniforms.u_resolution.value.set(w, h); }
+                function populate(container) {
+                    container.innerHTML = `
+                        <div class="setting"><label>Вязкость (${s.viscosity.toFixed(1)})</label><input type="range" data-setting="viscosity" min="0.1" max="1.0" step="0.1" value="${s.viscosity}"></div>
+                        <div class="setting"><label>Размер волны (${s.brushSize.toFixed(1)})</label><input type="range" data-setting="brushSize" min="0.05" max="0.3" step="0.01" value="${s.brushSize}"></div>
+                    `;
+                    container.querySelector('[data-setting="viscosity"]').addEventListener('input', e => {
+                        s.viscosity = parseFloat(e.target.value);
+                        material.uniforms.u_viscosity.value = s.viscosity;
+                        e.target.previousElementSibling.textContent = `Вязкость (${s.viscosity.toFixed(1)})`;
+                    });
+                     container.querySelector('[data-setting="brushSize"]').addEventListener('input', e => {
+                        s.brushSize = parseFloat(e.target.value);
+                        // TODO: Передать в шейдер, если нужно
+                        e.target.previousElementSibling.textContent = `Размер волны (${s.brushSize.toFixed(1)})`;
+                    });
+                }
+                
+                return { settings: s, start, stop, update, resize, populateSettings: populate };
+            },
+            'cymatics': (view) => {
+                // Использует глобальный WebGL
+                let material, camera, s = settings.cymatics;
+                let activeNotes = {};
+                const scale = ['C3', 'D3', 'E3', 'G3', 'A3', 'C4', 'D4', 'E4', 'G4', 'A4'];
+
+                function init() {
+                    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                    const geometry = new THREE.PlaneGeometry(2, 2);
+                    material = new THREE.ShaderMaterial({
+                        vertexShader: document.getElementById('cymatics-vs').textContent,
+                        fragmentShader: document.getElementById('cymatics-fs').textContent,
+                        uniforms: {
+                            u_time: { value: 0.0 }, u_color: { value: new THREE.Color('#a78bfa') },
+                            u_frequencies: { value: [0.0, 0.0, 0.0, 0.0, 0.0] },
+                            u_amplitudes: { value: [0.0, 0.0, 0.0, 0.0, 0.0] }
+                        }
+                    });
+                    const quad = new THREE.Mesh(geometry, material);
+                    quad.frustumCulled = false;
+                    webglScene.add(quad);
+                }
+                 function start() { init(); }
+                 function stop() { webglScene.clear(); if(audioState.isReady) audioState.polySynth.releaseAll(); activeNotes = {}; }
+                 function update(time) {
+                    material.uniforms.u_time.value = time;
+                    if (audioState.isReady && audioState.analyser) {
+                        const fft = audioState.analyser.getValue();
+                        const amps = [0.0, 0.0, 0.0, 0.0, 0.0], freqs = [0.0, 0.0, 0.0, 0.0, 0.0];
+                        let notes = Object.keys(activeNotes);
+                        for(let i=0; i < 5; i++) {
+                            if (i < fft.length && i < notes.length) {
+                                amps[i] = Math.max(0, (fft[i] + 100) / 100); 
+                                freqs[i] = window.Tone.Frequency(notes[i]).toFrequency();
+                            }
+                        }
+                        material.uniforms.u_amplitudes.value = amps;
+                        material.uniforms.u_frequencies.value = freqs;
+                    }
+                    renderer.render(webglScene, camera);
+                 }
+                 function handleInteraction(e) {
+                    initAudio();
+                    const clientX = e.clientX || e.touches[0].clientX;
+                    const noteIndex = Math.floor((clientX / window.innerWidth) * scale.length);
+                    const note = scale[noteIndex];
+                    if (e.type === 'mousedown' || e.type === 'touchstart') {
+                        if (note && !activeNotes[note]) {
+                            audioState.polySynth.triggerAttack(note); activeNotes[note] = true;
+                        }
+                    } else if (e.type === 'mouseup' || e.type === 'touchend') {
+                         audioState.polySynth.releaseAll(); activeNotes = {};
+                    }
+                 }
+                return { settings: s, start, stop, update, handleInteraction };
+            },
+            'weaver': (view) => {
+                // Использует глобальный WebGL
+                let particles, camera, s = settings.weaver;
+                let gravityWell = new THREE.Vector3(0, 0, 0);
+                let isAttracting = false;
+
+                function init() {
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 50;
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(s.count * 3), velocities = new Float32Array(s.count * 3);
+                    for (let i = 0; i < s.count; i++) {
+                        positions[i * 3] = (Math.random() - 0.5) * 100;
+                        positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                        velocities[i * 3] = 0; velocities[i * 3 + 1] = 0; velocities[i * 3 + 2] = 0;
+                    }
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    geometry.userData.velocities = velocities;
+                    const material = new THREE.PointsMaterial({ color: '#a78bfa', size: s.size, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.7 });
+                    particles = new THREE.Points(geometry, material);
+                    webglScene.add(particles);
+                }
+                function start() { init(); }
+                function stop() { webglScene.clear(); }
+                function update() {
+                    const positions = particles.geometry.attributes.position.array;
+                    const velocities = particles.geometry.userData.velocities;
+                    const gravity = s.gravity * 0.1, damping = s.damping;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        if (isAttracting) {
+                            const dx = gravityWell.x - positions[i], dy = gravityWell.y - positions[i + 1], dz = gravityWell.z - positions[i + 2];
+                            const distSq = dx * dx + dy * dy + dz * dz;
+                            if (distSq > 1.0) {
+                                const force = gravity / (distSq + 1.0);
+                                velocities[i] += dx * force; velocities[i + 1] += dy * force; velocities[i + 2] += dz * force;
+                            }
+                        }
+                        velocities[i] *= damping; velocities[i + 1] *= damping; velocities[i + 2] *= damping;
+                        positions[i] += velocities[i]; positions[i + 1] += velocities[i + 1]; positions[i + 2] += velocities[i + 2];
+                    }
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    renderer.render(webglScene, camera);
+                }
+                function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
+                function handleInteraction(e) {
+                    const clientX = e.clientX || e.touches[0].clientX;
+                    const clientY = e.clientY || e.touches[0].clientY;
+                    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+                    raycaster.ray.intersectPlane(plane, gravityWell);
+                    if (e.type === 'mousedown' || e.type === 'touchstart') isAttracting = true;
+                    if (e.type === 'mouseup' || e.type === 'touchend') isAttracting = false;
+                }
+                return { settings: s, start, stop, update, resize, handleInteraction };
+            },
+            'starfield': (view) => {
+                 // Использует глобальный WebGL
+                let particles, camera, s = settings.starfield;
+                function init() {
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 10;
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(s.count * 3);
+                    for (let i = 0; i < s.count; i++) {
+                        positions[i * 3] = (Math.random() - 0.5) * 100;
+                        positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    }
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const material = new THREE.PointsMaterial({ color: '#ffffff', size: s.size });
+                    particles = new THREE.Points(geometry, material);
+                    webglScene.add(particles);
+                }
+                function start() { init(); }
+                function stop() { webglScene.clear(); }
+                function update() {
+                    const positions = particles.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i + 2] += s.speed * 0.1;
+                        if (positions[i + 2] > 50) positions[i + 2] = -50;
+                    }
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    renderer.render(webglScene, camera);
+                }
+                function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
+                return { settings: s, start, stop, update, resize };
+            },
+             'orbs': (view) => {
+                 // Использует глобальный WebGL
+                let particles, camera, s = settings.orbs;
+                function init() {
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 30;
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(s.count * 3), data = [];
+                    for (let i = 0; i < s.count; i++) {
+                        positions[i * 3] = 0; positions[i * 3 + 1] = 0; positions[i * 3 + 2] = 0;
+                        data.push({ phaseX: Math.random() * Math.PI * 2, phaseY: Math.random() * Math.PI * 2, phaseZ: Math.random() * Math.PI * 2, speedX: (Math.random() - 0.5) * 0.5, speedY: (Math.random() - 0.5) * 0.5, speedZ: (Math.random() - 0.5) * 0.5, radius: 5 + Math.random() * 15 });
+                    }
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    geometry.userData.data = data;
+                    const material = new THREE.PointsMaterial({ color: '#a78bfa', size: s.size });
+                    particles = new THREE.Points(geometry, material);
+                    webglScene.add(particles);
+                }
+                function start() { init(); }
+                function stop() { webglScene.clear(); }
+                function update() {
+                    const data = particles.geometry.userData.data, positions = particles.geometry.attributes.position.array;
+                    for(let i = 0; i < data.length; i++) {
+                        const d = data[i];
+                        d.phaseX += d.speedX * s.speed * 0.1; d.phaseY += d.speedY * s.speed * 0.1; d.phaseZ += d.speedZ * s.speed * 0.1;
+                        positions[i * 3] = Math.sin(d.phaseX) * d.radius;
+                        positions[i * 3 + 1] = Math.cos(d.phaseY) * d.radius;
+                        positions[i * 3 + 2] = Math.sin(d.phaseZ) * Math.cos(d.phaseX) * d.radius;
+                    }
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    renderer.render(webglScene, camera);
+                }
+                function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
+                 return { settings: s, start, stop, update, resize };
+            },
+            'aura': (view) => {
+                // CSS
+                return { settings: settings.aura, start: ()=>{}, stop: ()=>{} };
+            },
+            'matrix': (view) => {
+                const canvas = view.querySelector('canvas');
+                const ctx = canvas.getContext('2d');
+                let s = settings.matrix;
+                let cols, drops, rafId;
+
+                function init() {
+                    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+                    cols = Math.floor(canvas.width / s.fontSize);
+                    drops = [];
+                    for (let i = 0; i < cols; i++) drops[i] = Math.floor(Math.random() * canvas.height);
+                }
+                function draw() {
+                    rafId = requestAnimationFrame(draw);
+                    ctx.fillStyle = 'rgba(5, 5, 10, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#a78bfa'; ctx.font = `${s.fontSize}px monospace`;
+                    for (let i = 0; i < drops.length; i++) {
+                        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+                        ctx.fillText(text, i * s.fontSize, drops[i] * s.fontSize);
+                        if (drops[i] * s.fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                        drops[i] += s.speed;
+                    }
+                }
+                function resize() { init(); } // Переинициализация при ресайзе
+                return { settings: s, start: ()=>{init(); draw();}, stop: ()=>cancelAnimationFrame(rafId), resize };
+            }
+        };
+
+        // --- Заполнение Панели Настроек ---
+        function populateSettings(modeName) {
+            const mode = modeInstances[modeName];
+            if (!mode || !mode.settings) {
+                settingsContent.innerHTML = '<p class="text-gray-400 text-sm">Настройки недоступны</p>';
+                return;
+            };
+            // Передаем контейнер в метод режима
+            if (mode.populateSettings) {
+                mode.populateSettings(settingsContent);
+            } else {
+                 // Генерация настроек по умолчанию (если нет кастомного метода)
+                const s = mode.settings;
+                let html = '';
+                for (const key in s) {
+                    if (typeof s[key] === 'number') { // Генерируем слайдер для чисел
+                         html += `<div class="setting"><label>${key} (${s[key].toFixed(1)})</label><input type="range" data-setting="${key}" min="0.1" max="10" step="0.1" value="${s[key]}"></div>`;
+                    }
+                     // TODO: Добавить другие типы настроек (цвет, выбор и т.д.)
+                }
+                 settingsContent.innerHTML = html || '<p class="text-gray-400 text-sm">Настройки недоступны</p>';
+            }
+        }
+
+        // --- Обновление Индикаторов Режима ---
+        function updateModeIndicator() {
+            modeIndicator.innerHTML = '';
+            modeOrder.forEach((mode, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'indicator-dot';
+                if (index === currentModeIndex) {
+                    dot.classList.add('active');
+                }
+                modeIndicator.appendChild(dot);
+            });
+        }
+        
+        // --- Глобальные Слушатели Жестов ---
+        let touchStartX = 0, touchStartY = 0, isSwiping = false, isSettingsOpen = false;
+
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false;
+            // Передаем событие активному режиму
+             if (activeMode && activeMode.handleInteraction) activeMode.handleInteraction(e);
+             onInteractionStart(e); // Для расчета скорости
+        }
+
+        function handleTouchMove(e) {
+            if (!touchStartX || !touchStartY) return;
+            
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const diffX = touchStartX - currentX;
+            const diffY = touchStartY - currentY;
+            
+            // Расчет скорости
+            onInteractionMove(e);
+
+            if (!isSwiping) { // Определяем направление свайпа при первом движении
+                 if (Math.abs(diffX) > Math.abs(diffY)) { // Горизонтальный свайп
+                    isSwiping = 'horizontal';
+                 } else if (Math.abs(diffY) > 10) { // Вертикальный свайп (с порогом)
+                    isSwiping = 'vertical';
+                 }
+            }
+            
+            if (isSwiping === 'horizontal') {
+                // TODO: Добавить визуальную обратную связь при свайпе (сдвиг)
+            } else if (isSwiping === 'vertical') {
+                // Управляем открытием/закрытием настроек
+                 if (diffY > 50 && !isSettingsOpen) { // Свайп вверх
+                    settingsOverlay.classList.add('open');
+                    isSettingsOpen = true;
+                 } else if (diffY < -50 && isSettingsOpen) { // Свайп вниз
+                    settingsOverlay.classList.remove('open');
+                    isSettingsOpen = false;
+                 }
+            } else {
+                 // Если не свайп, передаем событие режиму (для рисования и т.д.)
+                  if (activeMode && activeMode.handleInteraction) activeMode.handleInteraction(e);
+            }
+        }
+
+        function handleTouchEnd(e) {
+             if (isSwiping === 'horizontal') {
+                const diffX = touchStartX - (e.changedTouches[0].clientX);
+                if (Math.abs(diffX) > 50) { // Порог для переключения
+                    if (diffX > 0) { // Свайп влево
+                        switchMode((currentModeIndex + 1) % modeOrder.length, 1);
+                    } else { // Свайп вправо
+                        switchMode((currentModeIndex - 1 + modeOrder.length) % modeOrder.length, -1);
+                    }
+                }
+             } else if (isSwiping !== 'vertical') { // Не вертикальный свайп
+                 // Передаем событие активному режиму
+                  if (activeMode && activeMode.handleInteraction) activeMode.handleInteraction(e);
+             }
+             
+             // Сбрасываем состояние
+             touchStartX = 0; touchStartY = 0; isSwiping = false;
+             onInteractionEnd(e); // Для расчета скорости
+        }
+        
+        // Добавляем слушатели жестов
+        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+        
+        // --- Инициализация ---
+        function init() {
+            // WebGL База
+            webglRenderer = new THREE.WebGLRenderer({ canvas: webglCanvas, antialias: true, alpha: true });
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            webglRenderer.setPixelRatio(window.devicePixelRatio);
+            webglScene = new THREE.Scene();
+            webglClock = new THREE.Clock();
+            raycaster = new THREE.Raycaster();
+            
+            // Настройка Raycaster (он нужен многим режимам)
+            // raycaster.params.Points.threshold = 0.5; // Для частиц
+
+            // Инициализация UI
+            updateModeIndicator();
+
+            // Запускаем первый режим
+            switchMode(0);
+            
+            // Запускаем главный цикл WebGL (если он нужен)
+            function globalAnimate() {
+                 globalRAFID = requestAnimationFrame(globalAnimate);
+                 const time = webglClock.getElapsedTime();
+                 if (activeMode && activeMode.update) {
+                    // Передаем глобальные данные, если нужно
+                    activeMode.update(time);
+                 }
+                 // Затухание скорости мыши
+                 lastMousePos.vel *= 0.95;
+            }
+             globalAnimate(); // Запускаем цикл
+
+            // Добавляем слушатели для мыши (для десктопа)
+            document.addEventListener('mousedown', onInteractionStart);
+            document.addEventListener('mousemove', onInteractionMove);
+            document.addEventListener('mouseup', onInteractionEnd);
+
+             // Открытие/Закрытие Настроек (Клик на шестеренку)
+             settingsBtn.addEventListener('click', () => {
+                settingsOverlay.classList.toggle('open');
+                isSettingsOpen = settingsOverlay.classList.contains('open');
+             });
+
+             // Применение Настроек
+             settingsContent.addEventListener('input', (e) => {
+                 if (e.target.type !== 'range') return;
+                 const setting = e.target.dataset.setting;
+                 const value = parseFloat(e.target.value);
+                 if (activeMode.settings) {
+                     activeMode.settings[setting] = value;
+                     e.target.previousElementSibling.textContent = `${setting} (${value.toFixed(1)})`;
+                     // Пытаемся вызвать метод applySettings, если он есть
+                     if (activeMode.applySettings) {
+                        activeMode.applySettings();
+                     }
+                 }
+             });
+             
+             // Кнопка Очистки (Zen)
+             settingsContent.addEventListener('click', (e) => {
+                 if (e.target.id === 'clear-sand-btn') {
+                     if (activeModeName === 'zen' && activeMode.clear) {
+                         activeMode.clear();
+                     }
+                 }
+             });
+        }
+
+        init();
+        
+        // Ресайз
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            webglRenderer.setSize(w, h);
+            // Сообщаем активному режиму об изменении размера
+            if (activeMode && activeMode.resize) {
+                activeMode.resize(w, h);
+            }
+             // Ресайз для Matrix
+             if (modeInstances['matrix'] && modeInstances['matrix'].resize) {
+                 modeInstances['matrix'].resize();
+             }
+        });
+
+    </script>
+</body>
+</html>

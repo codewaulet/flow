@@ -1,20 +1,22 @@
 import * as THREE from 'three';
 
 // Типы для режимов и настроек Flow Experience
-export type FlowMode = 'smooth' | 'crawl' | 'dynamic';
+export type FlowMode = 'smooth' | 'crawl' | 'dynamic' | 'chaos';
 export type SubMode = 'spiral' | 'waves' | 'vortex';
-export type SoundType = 'theta' | 'noise' | 'rain' | 'ocean';
+export type SoundType = 'none' | 'theta' | 'alpha' | 'beta' | 'gamma' | 'white_noise' | 'rain' | 'ocean' | 'forest';
+export type SpecialMode = 'meditation' | 'focus' | 'creative' | 'audio';
+export type Theme = 'light' | 'dark' | 'system';
 
 export interface FlowSettings {
   mode: FlowMode;
-  subMode: SubMode;
-  baseSpeed: number;
+  subMode?: SubMode;
+  speed: number;
   sound: SoundType;
-  flickerSize: boolean;
-  flickerAlpha: boolean;
   showTrails: boolean;
   particleCount: number;
-  panelMode: 'slide' | 'center';
+  particleSize: number;
+  particleSpeed: number;
+  colorScheme: string;
 }
 
 export interface Particle {
@@ -67,4 +69,60 @@ export interface GestureEvent {
   velocity?: number;
   scale?: number;
   position?: { x: number; y: number };
+}
+
+// UI типы
+export interface TabItem {
+  id: string;
+  label: string;
+  icon?: string;
+  content: React.ReactNode;
+}
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  icon?: string;
+  description?: string;
+}
+
+export interface SliderConfig {
+  min: number;
+  max: number;
+  step: number;
+  unit?: string;
+  label: string;
+  description?: string;
+}
+
+// Onboarding типы
+export interface OnboardingStep {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  color: string;
+  preview?: React.ReactNode;
+}
+
+// Performance типы
+export interface PerformanceMetrics {
+  fps: number;
+  particleCount: number;
+  memoryUsage: number;
+  renderTime: number;
+}
+
+// Theme типы
+export interface ThemeConfig {
+  name: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    background: string;
+    surface: string;
+    text: string;
+  };
+  isDark: boolean;
 }

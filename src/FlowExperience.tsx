@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import GestureController from './components/settings/GestureController';
 import SettingsPanel from './components/settings/SettingsPanel';
 import SettingsToggle from './components/settings/SettingsToggle';
@@ -23,18 +23,28 @@ const FlowExperience: React.FC = () => {
     updateSoundWithSpeed, triggerHarmonicTone, setCurrentSpeed
   } = useFlowExperience();
 
-  // Получаем настройки из Zustand store
-  const settings = useSettingsStore((state) => ({
-    mode: state.mode,
-    subMode: state.subMode,
-    baseSpeed: state.baseSpeed,
-    sound: state.sound,
-    flickerSize: state.flickerSize,
-    flickerAlpha: state.flickerAlpha,
-    showTrails: state.showTrails,
-    particleCount: state.particleCount,
-    panelMode: state.panelMode
-  }));
+  // Получаем настройки из Zustand store отдельными селекторами
+  const mode = useSettingsStore((state) => state.mode);
+  const subMode = useSettingsStore((state) => state.subMode);
+  const baseSpeed = useSettingsStore((state) => state.baseSpeed);
+  const sound = useSettingsStore((state) => state.sound);
+  const flickerSize = useSettingsStore((state) => state.flickerSize);
+  const flickerAlpha = useSettingsStore((state) => state.flickerAlpha);
+  const showTrails = useSettingsStore((state) => state.showTrails);
+  const particleCount = useSettingsStore((state) => state.particleCount);
+  const panelMode = useSettingsStore((state) => state.panelMode);
+
+  const settings = useMemo(() => ({
+    mode,
+    subMode,
+    baseSpeed,
+    sound,
+    flickerSize,
+    flickerAlpha,
+    showTrails,
+    particleCount,
+    panelMode
+  }), [mode, subMode, baseSpeed, sound, flickerSize, flickerAlpha, showTrails, particleCount, panelMode]);
 
   useThreeJS({ containerRef, gameRef, particleSystemRef });
   useParticleSettings({ particleSystemRef });

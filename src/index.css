@@ -1,137 +1,296 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Оптимизация для мобильных устройств */
-@media (max-width: 768px) {
-  /* Отключаем выделение текста для лучшего жестового управления */
-  * {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+@layer base {
+  :root {
+    /* CSS Variables для темы */
+    --color-primary: 33 150 243;
+    --color-secondary: 25 118 210;
+    --color-accent: 3 169 244;
+    --color-background: 10 10 10;
+    --color-surface: 26 26 26;
+    --color-text: 255 255 255;
+    --color-text-secondary: 224 224 224;
+    --color-text-tertiary: 176 176 176;
+    
+    /* Glassmorphism переменные */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --glass-blur: 10px;
+    
+    /* Анимации */
+    --transition-fast: 0.15s ease-out;
+    --transition-normal: 0.3s ease-out;
+    --transition-slow: 0.5s ease-out;
+    
+    /* Тени */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
   }
-  
-  /* Оптимизация прокрутки */
-  .scrollable {
-    -webkit-overflow-scrolling: touch;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
     scroll-behavior: smooth;
   }
-  
-  /* Предотвращаем масштабирование при двойном тапе */
-  button, a {
-    touch-action: manipulation;
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: rgb(var(--color-background));
+    color: rgb(var(--color-text));
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-}
 
-/* Кастомные стили для слайдера */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-track {
-  background: rgba(255, 255, 255, 0.1);
-  height: 6px;
-  border-radius: 3px;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00e5cc, #66ff99);
-  box-shadow: 0 2px 8px rgba(0, 229, 204, 0.4);
-  cursor: grab;
-  margin-top: -7px;
-}
-
-input[type="range"]::-webkit-slider-thumb:active {
-  cursor: grabbing;
-  transform: scale(1.1);
-}
-
-input[type="range"]::-moz-range-track {
-  background: rgba(255, 255, 255, 0.1);
-  height: 6px;
-  border-radius: 3px;
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00e5cc, #66ff99);
-  box-shadow: 0 2px 8px rgba(0, 229, 204, 0.4);
-  cursor: grab;
-  border: none;
-}
-
-input[type="range"]::-moz-range-thumb:active {
-  cursor: grabbing;
-  transform: scale(1.1);
-}
-
-/* Анимация появления панели */
-@keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+  /* Утилиты для glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
-}
 
-@keyframes slideInFromBottom {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+
+  /* Современные кнопки */
+  .btn-modern {
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    transform: scale(1);
   }
-}
 
-/* Оптимизация производительности */
-.will-change-transform {
-  will-change: transform;
-}
+  .btn-modern:hover {
+    transform: scale(1.05);
+  }
 
-.gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
+  .btn-modern:active {
+    transform: scale(0.95);
+  }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  .btn-modern:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
+  .btn-primary {
+    background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+    color: white;
+    box-shadow: 0 4px 15px rgba(var(--color-primary), 0.3);
+  }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-}
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: #050510;
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Карточки */
+  .card-modern {
+    border-radius: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Анимации */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(var(--color-primary), 0.5); }
+    50% { box-shadow: 0 0 20px rgba(var(--color-primary), 0.8); }
+  }
+
+  /* Анимационные классы */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  /* Текст с тенями для читаемости */
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Градиенты */
+  .gradient-primary {
+    background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-primary)));
+  }
+
+  .gradient-rainbow {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3);
+    background-size: 300% 300%;
+    animation: gradientShift 3s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Скроллбар */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Фокус */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50;
+  }
+
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .card-modern {
+      padding: 1rem;
+    }
+    
+    .btn-modern {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Темная тема по умолчанию */
+  .dark {
+    --color-background: 10 10 10;
+    --color-surface: 26 26 26;
+  }
+
+  .light {
+    --color-background: 255 255 255;
+    --color-surface: 248 248 248;
+    --color-text: 0 0 0;
+    --color-text-secondary: 64 64 64;
+    --color-text-tertiary: 128 128 128;
+  }
+
+  /* Скрытие старых элементов */
+  .old-dropdown,
+  .old-select,
+  .old-border,
+  .old-ui,
+  .legacy-ui {
+    display: none !important;
+  }
+
+  /* Принудительные стили для современного дизайна */
+  .modern-ui {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+  }
+
+  /* Улучшенная читаемость */
+  h1, h2, h3, h4, h5, h6 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+    color: rgb(var(--color-text)) !important;
+  }
+
+  p, span, div {
+    color: rgb(var(--color-text-secondary)) !important;
+  }
+
+  /* Glassmorphism для карточек */
+  [class*="card"],
+  [class*="panel"],
+  [class*="modal"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Современные кнопки */
+  button {
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  /* Скрытие старых селектов */
+  select,
+  [role="combobox"],
+  [aria-expanded="false"] {
+    display: none !important;
+  }
 }
