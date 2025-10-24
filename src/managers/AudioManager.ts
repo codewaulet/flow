@@ -42,8 +42,19 @@ export class AudioManager {
       await this.createAudioNodes();
       this.isInitialized = true;
     } catch (error) {
-      console.error('Audio initialization failed:', error);
-      throw error;
+      console.warn('Audio initialization failed (will retry on user interaction):', error);
+      // Не выбрасываем ошибку, просто помечаем как не инициализированный
+      this.isInitialized = false;
+    }
+  }
+
+  public async initializeOnUserInteraction(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    try {
+      await this.initialize();
+    } catch (error) {
+      console.warn('Audio initialization on user interaction failed:', error);
     }
   }
 
@@ -130,7 +141,7 @@ export class AudioManager {
           this.audioState.ambientDrone.triggerAttack('C1');
         }
         break;
-      case 'noise':
+      case 'white_noise':
         if (this.audioState.darkNoise) {
           this.audioState.darkNoise.start();
         }
@@ -172,7 +183,7 @@ export class AudioManager {
           this.audioState.waveLFO.frequency.value = 0.08 * currentSpeed;
         }
         break;
-      case 'noise':
+      case 'white_noise':
         if (this.audioState.darkNoise) {
           this.audioState.darkNoise.volume.value = -30 + (currentSpeed - 1) * 5;
         }

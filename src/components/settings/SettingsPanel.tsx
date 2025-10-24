@@ -43,14 +43,18 @@ const SettingsPanel: React.FC = () => {
       <DialogContent 
         className={`
           ${isMobile 
-            ? 'bottom-0 left-0 right-0 top-auto h-[70vh] rounded-t-3xl' 
+            ? 'bottom-0 left-0 right-0 top-auto h-[85vh] rounded-t-3xl max-w-none' 
             : 'right-0 top-0 bottom-0 left-auto w-96 h-full rounded-l-3xl'
           }
           border-glass-strong bg-glass-medium backdrop-blur-xl
         `}
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          background: isMobile 
+            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08))'
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
+          boxShadow: isMobile 
+            ? '0 -20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            : '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
         }}
       >
         <DialogHeader className="pb-4 border-b border-glass-medium">
@@ -93,15 +97,15 @@ const SettingsPanel: React.FC = () => {
 
           {/* Табы с настройками */}
           <Tabs defaultValue="visual" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsList className={`grid w-full grid-cols-3 mb-4 ${isMobile ? 'h-12' : ''}`}>
               {tabs.map((tab) => (
                 <TabsTrigger 
                   key={tab.id} 
                   value={tab.id}
-                  className="flex items-center gap-2 text-xs"
+                  className={`flex items-center gap-2 ${isMobile ? 'text-sm px-3' : 'text-xs'}`}
                 >
-                  <span>{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className={isMobile ? 'text-lg' : ''}>{tab.icon}</span>
+                  <span className={isMobile ? 'inline' : 'hidden sm:inline'}>{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

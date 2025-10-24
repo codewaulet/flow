@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Zap, Hand, Smartphone } from 'lucide-react';
-import { Button } from './ui/Button';
+import { Zap, Hand, Smartphone } from 'lucide-react';
 import { Badge } from './ui/Badge';
-import { useSettingsStore } from '../stores/useSettingsStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface DecorativeElementsProps {
@@ -23,26 +21,23 @@ interface Hint {
 
 const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) => {
   const [hints, setHints] = useState<Hint[]>([]);
-  const [showFAB, setShowFAB] = useState(false);
-  const { openPanel } = useSettingsStore();
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (showIntro) {
       setHints([]);
-      setShowFAB(false);
       return;
     }
 
     if (isMobile) {
       const mobileHints: Hint[] = [
         {
-          id: 'tap-control',
+          id: 'swipe-settings',
           x: 20,
           y: 20,
           icon: <Hand className="w-4 h-4" />,
-          title: 'Тапните',
-          description: 'для управления',
+          title: 'Свайп слева направо',
+          description: 'для настроек',
           color: '#03a9f4',
           delay: 1000
         },
@@ -60,23 +55,14 @@ const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) =>
       
       setHints(mobileHints);
       
-      // Показываем FAB через 3 секунды
-      const fabTimer = setTimeout(() => {
-        setShowFAB(true);
-      }, 3000);
-      
       // Убираем подсказки через 8 секунд
       const hintsTimer = setTimeout(() => {
         setHints([]);
       }, 8000);
       
       return () => {
-        clearTimeout(fabTimer);
         clearTimeout(hintsTimer);
       };
-    } else {
-      // Для десктопа показываем FAB сразу
-      setShowFAB(true);
     }
   }, [showIntro, isMobile]);
 
@@ -168,69 +154,7 @@ const DecorativeElements: React.FC<DecorativeElementsProps> = ({ showIntro }) =>
           ))}
         </AnimatePresence>
 
-        {/* Floating Action Button для настроек */}
-        <AnimatePresence>
-          {showFAB && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0, y: 20 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="absolute bottom-6 right-6 pointer-events-auto"
-            >
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="relative"
-              >
-                <Button
-                  onClick={openPanel}
-                  size="lg"
-                  className="w-14 h-14 rounded-full shadow-xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #03a9f4, #00bcd4)',
-                    boxShadow: '0 8px 32px rgba(3, 169, 244, 0.4)'
-                  }}
-                >
-                  <Settings className="w-6 h-6" />
-                </Button>
-                
-                {/* Пульсирующий эффект */}
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.6, 0, 0.6]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut'
-                  }}
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: 'linear-gradient(135deg, #03a9f4, #00bcd4)',
-                    zIndex: -1
-                  }}
-                />
-                
-                {/* Бейдж с подсказкой */}
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1 }}
-                  className="absolute -top-2 -left-20"
-                >
-                  <Badge 
-                    variant="glass"
-                    className="text-xs px-3 py-1"
-                  >
-                    Настройки
-                  </Badge>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Убрали FAB кнопку настроек */}
 
         {/* Индикатор устройства */}
         <motion.div

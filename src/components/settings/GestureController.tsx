@@ -49,13 +49,17 @@ const GestureController: React.FC<GestureControllerProps> = ({
   };
 
   const bind = useGesture({
-    onDrag: ({ movement: [mx, my], velocity: [vx, vy], first, last, direction: [dx, dy] }) => {
+    onDrag: ({ movement: [mx, my], velocity: [vx, vy], first, last, direction: [dx, dy], initial: [ix, iy] }) => {
       if (first) {
         vibrate(5);
+        // Инициализируем аудио при первом пользовательском взаимодействии
+        import('../../managers/AudioManager').then(({ AudioManager }) => {
+          AudioManager.getInstance().initializeOnUserInteraction();
+        });
       }
 
-      // Свайп с края экрана для открытия настроек
-      if (first && mx < 50 && dx > 0) {
+      // Свайп с левого края экрана для открытия настроек
+      if (first && ix < 50 && dx > 0) {
         openPanel();
         showGestureIndicator('Настройки →');
         vibrate(20);
