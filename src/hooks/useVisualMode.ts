@@ -70,16 +70,55 @@ export const useVisualMode = (
     }
   }, [modeConfig, currentMode]);
   
+  // Apply quality-based optimizations
+  const qualityLevel = useAppStore(state => state.qualityLevel);
+  const updateModeConfig = useAppStore(state => state.updateModeConfig);
+  
+  useEffect(() => {
+    if (!modeManagerRef.current) return;
+    
+    const mode = modeManagerRef.current.getCurrentMode();
+    if (!mode) return;
+    
+    // Adjust particle count based on quality
+    const baseConfig = modeConfig[currentMode];
+    let adjustedCount = baseConfig.particleCount;
+    
+    if (qualityLevel === 'low') {
+      adjustedCount = Math.floor(baseConfig.particleCount * 0.4);
+    } else if (qualityLevel === 'medium') {
+      adjustedCount = Math.floor(baseConfig.particleCount * 0.7);
+    }
+    
+    // Only update if significantly different
+    if (Math.abs(adjustedCount - baseConfig.particleCount) > 100) {
+      updateModeConfig(currentMode, { particleCount: adjustedCount });
+    }
+  }, [qualityLevel, currentMode, modeConfig, updateModeConfig]);
+  
   // Animation loop
   useEffect(() => {
     if (!modeManagerRef.current || !renderer || !scene || !camera) return;
     
+    let isTabVisible = !document.hidden;
+    
+    // Pause rendering when tab is hidden
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+      if (isTabVisible) {
+        clockRef.current.getDelta(); // Reset delta to prevent large jump
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
       
-      if (!isPaused) {
+      // Only render if tab is visible and not paused
+      if (!isPaused && isTabVisible) {
         const time = clockRef.current.getElapsedTime();
-        const delta = clockRef.current.getDelta();
+        const delta = Math.min(clockRef.current.getDelta(), 0.1); // Cap delta to prevent huge jumps
         
         modeManagerRef.current?.update(time, delta);
         renderer.render(scene, camera);
@@ -92,6 +131,7 @@ export const useVisualMode = (
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [renderer, scene, camera, isPaused]);
   

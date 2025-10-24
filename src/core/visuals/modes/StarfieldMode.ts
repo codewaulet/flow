@@ -82,21 +82,25 @@ export class StarfieldMode extends BaseMode {
     
     this.stars = new THREE.Points(geometry, material);
     this.scene.add(this.stars);
+    
+    // Initialize speed properly
+    this.currentSpeed = this.config.speed;
+    this.targetSpeed = this.config.speed;
   }
   
   update(time: number, deltaTime: number): void {
     if (!this.stars) return;
     
     // Smooth speed transition
-    this.currentSpeed += (this.targetSpeed - this.currentSpeed) * deltaTime * 3;
+    this.currentSpeed += (this.targetSpeed - this.currentSpeed) * deltaTime * 5;
     
     const positions = this.stars.geometry.attributes.position.array as Float32Array;
     const sizes = this.stars.geometry.attributes.size.array as Float32Array;
     
     for (let i = 0; i < this.starData.length; i++) {
-      // Move star forward
+      // Move star forward - increased multiplier for visible movement
       const speed = this.currentSpeed * this.starData[i].speed * this.config.intensity;
-      this.starData[i].z += speed * deltaTime * 20;
+      this.starData[i].z += speed * 50 * deltaTime; // Increased from 20 to 50
       positions[i * 3 + 2] = this.starData[i].z;
       
       // Wrap around when star passes camera
@@ -109,7 +113,7 @@ export class StarfieldMode extends BaseMode {
       
       // Size based on depth (closer = bigger)
       const depth = (this.starData[i].z + 50) / 60;
-      sizes[i] = (0.1 + depth * 0.5) * (1 + this.currentSpeed);
+      sizes[i] = (0.1 + depth * 0.5) * (1 + this.currentSpeed * 0.5);
     }
     
     this.stars.geometry.attributes.position.needsUpdate = true;

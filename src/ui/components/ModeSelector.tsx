@@ -5,32 +5,37 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore, VisualMode } from '../../store/useAppStore';
-import { colors, spacing } from '../theme/tokens';
+import { colors, spacing, glassmorphism } from '../theme/tokens';
+import { isMobile } from '../../utils/device';
 
 const modes: { id: VisualMode; name: string; icon: string }[] = [
-  { id: 'breathe', name: 'Breathe', icon: '🫁' },
+  { id: 'breathe', name: 'Universe', icon: '🌌' },
   { id: 'toroid', name: 'Toroid', icon: '⭕' },
   { id: 'weaver', name: 'Weaver', icon: '🕸️' },
   { id: 'starfield', name: 'Starfield', icon: '✨' },
   { id: 'matrix', name: 'Matrix', icon: '💚' },
-  { id: 'orbs', name: 'Orbs', icon: '🔮' },
+  { id: 'orbs', name: 'Crawl', icon: '⭐' },
 ];
 
 export const ModeSelector: React.FC = () => {
   const currentMode = useAppStore(state => state.currentMode);
   const setCurrentMode = useAppStore(state => state.setCurrentMode);
   const isTransitioning = useAppStore(state => state.isTransitioning);
+  const mobile = isMobile();
   
   return (
     <div
       style={{
         position: 'fixed',
-        bottom: spacing[8],
+        bottom: mobile ? spacing[6] : spacing[8],
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
-        gap: spacing[3],
+        gap: mobile ? spacing[2] : spacing[3],
         alignItems: 'center',
+        padding: spacing[2],
+        ...glassmorphism,
+        borderRadius: '50px',
         zIndex: 50,
       }}
     >
@@ -42,8 +47,8 @@ export const ModeSelector: React.FC = () => {
           whileHover={{ scale: 1.2 }}
           whileTap={{ scale: 0.95 }}
           style={{
-            width: currentMode === mode.id ? '3rem' : '0.75rem',
-            height: '0.75rem',
+            width: currentMode === mode.id ? (mobile ? '2.5rem' : '3rem') : (mobile ? '0.6rem' : '0.75rem'),
+            height: mobile ? '0.6rem' : '0.75rem',
             borderRadius: '0.375rem',
             background: currentMode === mode.id 
               ? colors.accent.purple[400]
@@ -53,6 +58,7 @@ export const ModeSelector: React.FC = () => {
             transition: 'all 0.3s ease',
             position: 'relative',
             overflow: 'hidden',
+            minWidth: mobile ? '0.6rem' : '0.75rem', // Prevent collapse
           }}
           title={mode.name}
         >

@@ -24,9 +24,9 @@ export class PerformanceMonitor {
   private onQualityChange?: (level: QualityLevel) => void;
   
   private fpsThresholds = {
-    low: 30,
-    medium: 45,
-    high: 55,
+    low: 35,
+    medium: 50,
+    high: 57,
   };
   
   /**
@@ -100,24 +100,28 @@ export class PerformanceMonitor {
    * Check if quality adjustment is needed based on FPS
    */
   private checkQualityAdjustment(): void {
-    if (this.frames.length < 30) return; // Need enough samples
+    if (this.frames.length < 20) return; // Reduced samples needed for faster response
     
     const avgFps = this.frames.reduce((a, b) => a + b, 0) / this.frames.length;
+    const minFps = Math.min(...this.frames.slice(-20));
     
-    // Downgrade quality if FPS too low
-    if (avgFps < this.fpsThresholds.low && this.qualityLevel !== 'low') {
-      this.setQualityLevel('low');
+    // Aggressive downgrade for very low FPS
+    if (minFps < 20 || avgFps < this.fpsThresholds.low) {
+      if (this.qualityLevel !== 'low') {
+        this.setQualityLevel('low');
+      }
     } else if (avgFps < this.fpsThresholds.medium && this.qualityLevel === 'high') {
       this.setQualityLevel('medium');
     }
-    // Upgrade quality if FPS is good and stable
-    else if (avgFps > this.fpsThresholds.high && this.qualityLevel === 'low') {
-      this.setQualityLevel('medium');
-    } else if (avgFps > 58 && this.qualityLevel === 'medium') {
-      // Only upgrade to high if FPS is very stable
-      const minRecent = Math.min(...this.frames.slice(-30));
-      if (minRecent > this.fpsThresholds.high) {
-        this.setQualityLevel('high');
+    // Upgrade quality only if FPS is consistently good
+    else if (avgFps > this.fpsThresholds.high && minFps > this.fpsThresholds.medium) {
+      if (this.qualityLevel === 'low') {
+        this.setQualityLevel('medium');
+      } else if (avgFps > 58 && this.qualityLevel === 'medium') {
+        const minRecent = Math.min(...this.frames.slice(-60)); // Check longer history
+        if (minRecent > this.fpsThresholds.high) {
+          this.setQualityLevel('high');
+        }
       }
     }
   }

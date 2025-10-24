@@ -85,9 +85,14 @@ export class MatrixMode extends BaseMode {
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
+    // CRT scanline effect
+    this.addScanlines(time);
+    
     // Set text properties
     this.ctx.fillStyle = this.config.color;
-    this.ctx.font = `${this.fontSize}px monospace`;
+    this.ctx.font = `bold ${this.fontSize}px monospace`;
+    this.ctx.shadowBlur = 8;
+    this.ctx.shadowColor = this.config.color;
     
     // Draw characters
     for (let i = 0; i < this.columns; i++) {
@@ -99,7 +104,27 @@ export class MatrixMode extends BaseMode {
       const x = i * this.fontSize;
       const y = this.drops[i] * this.fontSize;
       
-      this.ctx.fillText(char, x, y);
+      // Highlight leading character
+      if (this.drops[i] > 1) {
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText(char, x, y);
+        
+        // Draw fading trail
+        this.ctx.fillStyle = this.config.color;
+        const trailLength = 5;
+        for (let t = 1; t < trailLength; t++) {
+          const alpha = 1 - (t / trailLength);
+          this.ctx.globalAlpha = alpha;
+          this.ctx.fillText(
+            this.characters.charAt(Math.floor(Math.random() * this.characters.length)),
+            x,
+            y - t * this.fontSize
+          );
+        }
+        this.ctx.globalAlpha = 1;
+      } else {
+        this.ctx.fillText(char, x, y);
+      }
       
       // Reset drop randomly or when it goes off screen
       if (y > this.canvas.height && Math.random() > 0.975) {
@@ -117,6 +142,24 @@ export class MatrixMode extends BaseMode {
     
     // Update texture
     this.texture.needsUpdate = true;
+  }
+  
+  /**
+   * Add CRT scanline effect
+   */
+  private addScanlines(time: number): void {
+    if (!this.ctx || !this.canvas) return;
+    
+    // Subtle scanlines
+    const scanlineY = ((time * 100) % this.canvas.height);
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+    for (let y = 0; y < this.canvas.height; y += 4) {
+      this.ctx.fillRect(0, y, this.canvas.width, 2);
+    }
+    
+    // Moving scanline
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    this.ctx.fillRect(0, scanlineY, this.canvas.width, 3);
   }
   
   /**

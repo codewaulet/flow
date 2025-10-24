@@ -1,11 +1,12 @@
 /**
- * Quick settings drawer
+ * Quick settings drawer/bottom sheet (mobile-responsive)
  */
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { colors, spacing, glassmorphism, typography } from '../theme/tokens';
+import { isMobile } from '../../utils/device';
 
 export const QuickSettings: React.FC = () => {
   const settingsOpen = useAppStore(state => state.settingsOpen);
@@ -20,8 +21,17 @@ export const QuickSettings: React.FC = () => {
   const showFPS = useAppStore(state => state.showFPS);
   const toggleFPS = useAppStore(state => state.toggleFPS);
   const fps = useAppStore(state => state.fps);
+  const qualityLevel = useAppStore(state => state.qualityLevel);
   
   const config = modeConfig[currentMode];
+  const mobile = isMobile();
+  
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    // Close if dragged down more than 100px on mobile
+    if (mobile && info.offset.y > 100) {
+      setSettingsOpen(false);
+    }
+  };
   
   return (
     <AnimatePresence>
@@ -39,54 +49,90 @@ export const QuickSettings: React.FC = () => {
               background: 'rgba(0, 0, 0, 0.5)',
               backdropFilter: 'blur(10px)',
               zIndex: 90,
+              touchAction: 'none',
             }}
           />
           
-          {/* Drawer */}
+          {/* Drawer/Bottom Sheet */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            initial={mobile ? { y: '100%' } : { x: '100%' }}
+            animate={mobile ? { y: 0 } : { x: 0 }}
+            exit={mobile ? { y: '100%' } : { x: '100%' }}
+            drag={mobile ? 'y' : false}
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             style={{
               position: 'fixed',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: '400px',
-              maxWidth: '90vw',
+              ...(mobile ? {
+                bottom: 0,
+                left: 0,
+                right: 0,
+                maxHeight: '85vh',
+                borderRadius: '24px 24px 0 0',
+              } : {
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: '400px',
+                maxWidth: '90vw',
+                borderRadius: '0',
+              }),
               ...glassmorphism,
-              borderRadius: '0',
-              padding: spacing[6],
+              padding: mobile ? spacing[4] : spacing[6],
+              paddingBottom: mobile ? spacing[8] : spacing[6], // Extra padding for mobile safe area
               overflowY: 'auto',
               zIndex: 100,
             }}
           >
+            {/* Drag Handle (Mobile) */}
+            {mobile && (
+              <div style={{
+                width: '40px',
+                height: '4px',
+                background: 'rgba(255, 255, 255, 0.3)',
+                borderRadius: '2px',
+                margin: '0 auto 1rem',
+              }} />
+            )}
+            
             {/* Header */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              marginBottom: spacing[6],
+              marginBottom: spacing[4],
             }}>
-              <h2 style={{ 
-                fontSize: typography.fontSize['2xl'], 
-                fontWeight: typography.fontWeight.bold,
-                color: colors.text.primary,
-                margin: 0,
-              }}>
-                Settings
-              </h2>
+              <div>
+                <h2 style={{ 
+                  fontSize: mobile ? typography.fontSize.xl : typography.fontSize['2xl'], 
+                  fontWeight: typography.fontWeight.bold,
+                  color: colors.text.primary,
+                  margin: 0,
+                  marginBottom: spacing[1],
+                }}>
+                  Settings
+                </h2>
+                {!mobile && (
+                  <div style={{
+                    fontSize: typography.fontSize.sm,
+                    color: colors.text.tertiary,
+                  }}>
+                    Quality: {qualityLevel} • {fps} FPS
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => setSettingsOpen(false)}
                 style={{
-                  width: '2.5rem',
-                  height: '2.5rem',
+                  width: mobile ? '2rem' : '2.5rem',
+                  height: mobile ? '2rem' : '2.5rem',
                   borderRadius: '50%',
                   background: 'rgba(255, 255, 255, 0.1)',
                   border: 'none',
                   color: colors.text.primary,
-                  fontSize: typography.fontSize.xl,
+                  fontSize: mobile ? typography.fontSize.lg : typography.fontSize.xl,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -109,14 +155,15 @@ export const QuickSettings: React.FC = () => {
               </h3>
               
               {/* Speed */}
-              <div style={{ marginBottom: spacing[4] }}>
+              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: typography.fontSize.sm,
-                  color: colors.text.secondary,
+                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Speed: {config.speed.toFixed(1)}
+                  Speed: <span style={{ color: colors.accent.purple[400] }}>{config.speed.toFixed(1)}</span>
                 </label>
                 <input
                   type="range"
@@ -125,19 +172,23 @@ export const QuickSettings: React.FC = () => {
                   step="0.1"
                   value={config.speed}
                   onChange={(e) => updateModeConfig(currentMode, { speed: parseFloat(e.target.value) })}
-                  style={{ width: '100%' }}
+                  style={{ 
+                    width: '100%',
+                    height: mobile ? '8px' : '4px', // Larger touch target on mobile
+                  }}
                 />
               </div>
               
               {/* Intensity */}
-              <div style={{ marginBottom: spacing[4] }}>
+              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: typography.fontSize.sm,
-                  color: colors.text.secondary,
+                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Intensity: {(config.intensity * 100).toFixed(0)}%
+                  Intensity: <span style={{ color: colors.accent.purple[400] }}>{(config.intensity * 100).toFixed(0)}%</span>
                 </label>
                 <input
                   type="range"
@@ -146,28 +197,44 @@ export const QuickSettings: React.FC = () => {
                   step="0.05"
                   value={config.intensity}
                   onChange={(e) => updateModeConfig(currentMode, { intensity: parseFloat(e.target.value) })}
-                  style={{ width: '100%' }}
+                  style={{ 
+                    width: '100%',
+                    height: mobile ? '8px' : '4px',
+                  }}
                 />
               </div>
               
-              {/* Particle Count */}
-              <div style={{ marginBottom: spacing[4] }}>
+              {/* Particle Count - with warning for high values */}
+              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: typography.fontSize.sm,
-                  color: colors.text.secondary,
+                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  Particle Count: {config.particleCount}
+                  Particles: <span style={{ color: colors.accent.purple[400] }}>{config.particleCount}</span>
+                  {config.particleCount > 3000 && (
+                    <span style={{ 
+                      color: colors.text.tertiary, 
+                      fontSize: typography.fontSize.xs,
+                      marginLeft: spacing[2],
+                    }}>
+                      (may impact FPS)
+                    </span>
+                  )}
                 </label>
                 <input
                   type="range"
                   min="100"
-                  max="10000"
+                  max="5000"
                   step="100"
-                  value={config.particleCount}
+                  value={Math.min(config.particleCount, 5000)}
                   onChange={(e) => updateModeConfig(currentMode, { particleCount: parseInt(e.target.value) })}
-                  style={{ width: '100%' }}
+                  style={{ 
+                    width: '100%',
+                    height: mobile ? '8px' : '4px',
+                  }}
                 />
               </div>
             </div>

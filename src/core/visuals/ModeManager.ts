@@ -162,14 +162,33 @@ export class ModeManager {
    */
   private async fadeOut(): Promise<void> {
     return new Promise(resolve => {
-      let opacity = 1;
+      const startTime = performance.now();
+      const duration = 400; // ms
+      
       const fadeStep = () => {
-        opacity -= 0.05;
-        if (opacity <= 0) {
-          resolve();
-        } else {
-          // Apply fade to scene (can be enhanced with post-processing)
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const opacity = 1 - progress;
+        
+        // Apply opacity to all objects in scene
+        this.scene.traverse((object) => {
+          if (object instanceof THREE.Points || object instanceof THREE.Mesh) {
+            if (object.material) {
+              if (Array.isArray(object.material)) {
+                object.material.forEach(mat => {
+                  if ('opacity' in mat) mat.opacity = opacity;
+                });
+              } else if ('opacity' in object.material) {
+                object.material.opacity = opacity;
+              }
+            }
+          }
+        });
+        
+        if (progress < 1) {
           requestAnimationFrame(fadeStep);
+        } else {
+          resolve();
         }
       };
       fadeStep();
@@ -181,14 +200,35 @@ export class ModeManager {
    */
   private async fadeIn(): Promise<void> {
     return new Promise(resolve => {
-      let opacity = 0;
+      const startTime = performance.now();
+      const duration = 600; // ms
+      
       const fadeStep = () => {
-        opacity += 0.05;
-        if (opacity >= 1) {
-          resolve();
-        } else {
-          // Apply fade to scene (can be enhanced with post-processing)
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const opacity = progress;
+        
+        // Apply opacity to all objects in scene
+        this.scene.traverse((object) => {
+          if (object instanceof THREE.Points || object instanceof THREE.Mesh) {
+            if (object.material) {
+              if (Array.isArray(object.material)) {
+                object.material.forEach(mat => {
+                  if ('opacity' in mat) mat.opacity = opacity * (mat.userData.originalOpacity || 1);
+                });
+              } else if ('opacity' in object.material) {
+                const originalOpacity = object.material.userData.originalOpacity || object.material.opacity;
+                object.material.userData.originalOpacity = originalOpacity;
+                object.material.opacity = opacity * originalOpacity;
+              }
+            }
+          }
+        });
+        
+        if (progress < 1) {
           requestAnimationFrame(fadeStep);
+        } else {
+          resolve();
         }
       };
       fadeStep();

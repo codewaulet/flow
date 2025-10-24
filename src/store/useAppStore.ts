@@ -73,42 +73,42 @@ export interface AppState {
   toggleFPS: () => void;
 }
 
-// Default mode configurations
+// Default mode configurations (optimized for better FPS)
 const defaultModeConfigs: Record<VisualMode, ModeConfig> = {
   breathe: {
-    speed: 8.0,
-    intensity: 0.7,
-    particleCount: 6,
+    speed: 0.3,
+    intensity: 0.8,
+    particleCount: 3000, // Galaxy particles
     color: '#a78bfa',
   },
   toroid: {
     speed: 0.5,
     intensity: 0.8,
-    particleCount: 5000,
+    particleCount: 2000, // Reduced from 5000
     color: '#a78bfa',
   },
   weaver: {
     speed: 0.8,
     intensity: 0.5,
-    particleCount: 3000,
+    particleCount: 1500, // Reduced from 3000
     color: '#a78bfa',
   },
   starfield: {
     speed: 0.5,
     intensity: 1.0,
-    particleCount: 5000,
+    particleCount: 3000, // Reduced from 5000
     color: '#ffffff',
   },
   matrix: {
     speed: 1.0,
     intensity: 1.0,
-    particleCount: 100,
+    particleCount: 80, // Reduced from 100
     color: '#00ff00',
   },
   orbs: {
     speed: 0.5,
     intensity: 0.7,
-    particleCount: 200,
+    particleCount: 150, // Reduced from 200
     color: '#a78bfa',
   },
 };

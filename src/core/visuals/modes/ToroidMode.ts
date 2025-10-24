@@ -109,6 +109,10 @@ export class ToroidMode extends BaseMode {
     const positions = this.particles.geometry.attributes.position.array as Float32Array;
     const speed = this.config.speed * 0.1 * this.config.intensity;
     
+    // Pre-calculate common values
+    const majorR = this.majorRadius;
+    const minorR = this.minorRadius;
+    
     for (let i = 0; i < this.particleData.length; i++) {
       const data = this.particleData[i];
       
@@ -116,14 +120,16 @@ export class ToroidMode extends BaseMode {
       data.u += data.speed * speed;
       data.v += 0.01 * speed + Math.sin(time + data.phaseOffset) * 0.005;
       
-      // Calculate new position
-      const x = (this.majorRadius + this.minorRadius * Math.cos(data.v)) * Math.cos(data.u);
-      const y = (this.majorRadius + this.minorRadius * Math.cos(data.v)) * Math.sin(data.u);
-      const z = this.minorRadius * Math.sin(data.v);
+      // Calculate new position (optimize with pre-calculated cos/sin)
+      const cosV = Math.cos(data.v);
+      const sinV = Math.sin(data.v);
+      const cosU = Math.cos(data.u);
+      const sinU = Math.sin(data.u);
+      const r = majorR + minorR * cosV;
       
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
+      positions[i * 3] = r * cosU;
+      positions[i * 3 + 1] = r * sinU;
+      positions[i * 3 + 2] = minorR * sinV;
     }
     
     this.particles.geometry.attributes.position.needsUpdate = true;

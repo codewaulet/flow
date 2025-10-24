@@ -87,27 +87,12 @@ export class WeaverMode extends BaseMode {
     this.particles = new THREE.Points(geometry, material);
     this.scene.add(this.particles);
     
-    // Create line geometry for connections
-    const lineGeometry = new THREE.BufferGeometry();
-    const linePositions = new Float32Array(count * count * 6); // Overa llocate
-    const lineColors = new Float32Array(count * count * 6);
-    
-    lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-    lineGeometry.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
-    
-    const lineMaterial = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.2,
-      blending: THREE.AdditiveBlending,
-    });
-    
-    this.lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-    this.scene.add(this.lines);
+    // Connection lines disabled for performance
+    // Can be re-enabled with a performance toggle
   }
   
   update(time: number, deltaTime: number): void {
-    if (!this.particles || !this.lines) return;
+    if (!this.particles) return;
     
     const positions = this.particles.geometry.attributes.position.array as Float32Array;
     const gravity = this.config.intensity * 0.1;
@@ -159,64 +144,6 @@ export class WeaverMode extends BaseMode {
     }
     
     this.particles.geometry.attributes.position.needsUpdate = true;
-    
-    // Update connections
-    this.updateConnections();
-  }
-  
-  /**
-   * Update line connections between nearby particles
-   */
-  private updateConnections(): void {
-    if (!this.lines) return;
-    
-    const linePositions = this.lines.geometry.attributes.position.array as Float32Array;
-    const lineColors = this.lines.geometry.attributes.color.array as Float32Array;
-    const maxDistSq = this.maxDistance * this.maxDistance;
-    const baseColor = new THREE.Color(this.config.color);
-    
-    let lineIndex = 0;
-    const maxConnections = Math.min(50, this.particleData.length); // Limit for performance
-    
-    for (let i = 0; i < maxConnections && i < this.particleData.length; i++) {
-      const p1 = this.particleData[i];
-      
-      // Check only a subset of other particles
-      for (let j = i + 1; j < Math.min(i + 20, this.particleData.length); j++) {
-        const p2 = this.particleData[j];
-        const distSq = p1.position.distanceToSquared(p2.position);
-        
-        if (distSq < maxDistSq) {
-          // Add line
-          linePositions[lineIndex * 6] = p1.position.x;
-          linePositions[lineIndex * 6 + 1] = p1.position.y;
-          linePositions[lineIndex * 6 + 2] = p1.position.z;
-          linePositions[lineIndex * 6 + 3] = p2.position.x;
-          linePositions[lineIndex * 6 + 4] = p2.position.y;
-          linePositions[lineIndex * 6 + 5] = p2.position.z;
-          
-          // Fade based on distance
-          const alpha = 1 - Math.sqrt(distSq) / this.maxDistance;
-          lineColors[lineIndex * 6] = baseColor.r * alpha;
-          lineColors[lineIndex * 6 + 1] = baseColor.g * alpha;
-          lineColors[lineIndex * 6 + 2] = baseColor.b * alpha;
-          lineColors[lineIndex * 6 + 3] = baseColor.r * alpha;
-          lineColors[lineIndex * 6 + 4] = baseColor.g * alpha;
-          lineColors[lineIndex * 6 + 5] = baseColor.b * alpha;
-          
-          lineIndex++;
-        }
-      }
-    }
-    
-    // Hide unused lines
-    for (let i = lineIndex * 6; i < linePositions.length; i++) {
-      linePositions[i] = 0;
-      lineColors[i] = 0;
-    }
-    
-    this.lines.geometry.attributes.position.needsUpdate = true;
-    this.lines.geometry.attributes.color.needsUpdate = true;
   }
   
   handleInteraction(x: number, y: number, type: 'start' | 'move' | 'end'): void {

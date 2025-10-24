@@ -1,48 +1,49 @@
 /**
- * Orbs Mode - Lissajous curve orbital motion
+ * Crawl Mode - Star Wars style text crawl into perspective
  */
 
 import * as THREE from 'three';
 import { BaseMode, ModeMetadata } from '../BaseMode';
 
-interface OrbData {
-  phaseX: number;
-  phaseY: number;
-  phaseZ: number;
-  speedX: number;
-  speedY: number;
-  speedZ: number;
-  radius: number;
-  trailPositions: THREE.Vector3[];
-}
-
 export class OrbsMode extends BaseMode {
-  private orbs: THREE.Points | null = null;
-  private trails: THREE.LineSegments | null = null;
-  private orbData: OrbData[] = [];
-  private trailLength: number = 20;
+  private particles: THREE.Points | null = null;
+  private scrollOffset: number = 0;
+  private lines: string[] = [
+    'A long time ago in a galaxy far, far away...',
+    '',
+    'Enter the FLOW state',
+    '',
+    'Where focus meets infinity',
+    'And creativity knows no bounds',
+    '',
+    'Let the particles guide you',
+    'Into deep concentration',
+    '',
+    'Breathe... Flow... Create...',
+  ];
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
       id: 'orbs',
-      name: 'Orbs',
-      description: 'Orbital harmonics with Lissajous patterns',
-      icon: '🔮',
+      name: 'Crawl',
+      description: 'Hypnotic text crawl into the void',
+      icon: '⭐',
       defaultConfig: {
-        speed: 0.5,
-        intensity: 0.7,
-        particleCount: 200,
-        color: '#a78bfa',
+        speed: 0.3,
+        intensity: 1.0,
+        particleCount: 5000,
+        color: '#ffeb3b',
       },
     };
     super(scene, camera, renderer, metadata);
   }
   
   async init(): Promise<void> {
-    // Setup camera
+    // Setup camera with perspective for crawl effect
     if (this.camera instanceof THREE.PerspectiveCamera) {
-      this.camera.position.set(0, 0, 40);
-      this.camera.lookAt(0, 0, 0);
+      this.camera.position.set(0, -15, 20);
+      this.camera.lookAt(0, 0, -50);
+      this.camera.rotation.x = -0.4; // Tilt for perspective
     }
     
     const count = this.config.particleCount;
@@ -51,43 +52,61 @@ export class OrbsMode extends BaseMode {
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     
-    this.orbData = [];
     const baseColor = new THREE.Color(this.config.color);
-    const hsl = { h: 0, s: 0, l: 0 };
-    baseColor.getHSL(hsl);
     
-    for (let i = 0; i < count; i++) {
-      const orbData: OrbData = {
-        phaseX: Math.random() * Math.PI * 2,
-        phaseY: Math.random() * Math.PI * 2,
-        phaseZ: Math.random() * Math.PI * 2,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5,
-        speedZ: (Math.random() - 0.5) * 0.5,
-        radius: 5 + Math.random() * 15,
-        trailPositions: [],
-      };
+    // Generate text as particles
+    let particleIndex = 0;
+    const spacing = 0.3;
+    const lineHeight = 2;
+    
+    for (let lineIdx = 0; lineIdx < this.lines.length && particleIndex < count; lineIdx++) {
+      const line = this.lines[lineIdx];
+      const yPos = -lineIdx * lineHeight;
       
-      this.orbData.push(orbData);
+      // Center the text
+      const startX = -(line.length * spacing) / 2;
       
-      // Initial position
-      positions[i * 3] = 0;
-      positions[i * 3 + 1] = 0;
-      positions[i * 3 + 2] = 0;
+      for (let charIdx = 0; charIdx < line.length && particleIndex < count; charIdx++) {
+        const char = line[charIdx];
+        
+        if (char !== ' ') {
+          // Create particles in a grid pattern for each character
+          const particlesPerChar = 8;
+          for (let p = 0; p < particlesPerChar && particleIndex < count; p++) {
+            const xOffset = (Math.random() - 0.5) * spacing * 0.8;
+            const yOffset = (Math.random() - 0.5) * lineHeight * 0.4;
+            
+            positions[particleIndex * 3] = startX + charIdx * spacing + xOffset;
+            positions[particleIndex * 3 + 1] = yPos + yOffset;
+            positions[particleIndex * 3 + 2] = -lineIdx * 5; // Depth
+            
+            // Color with slight variation
+            const brightness = 0.9 + Math.random() * 0.1;
+            colors[particleIndex * 3] = baseColor.r * brightness;
+            colors[particleIndex * 3 + 1] = baseColor.g * brightness;
+            colors[particleIndex * 3 + 2] = baseColor.b * brightness;
+            
+            // Size variation
+            sizes[particleIndex] = 0.15 + Math.random() * 0.1;
+            
+            particleIndex++;
+          }
+        }
+      }
+    }
+    
+    // Fill remaining particles with stars
+    for (let i = particleIndex; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 200;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 200 - 100;
       
-      // Color variation
-      const hueOffset = (i / count) * 0.2;
-      const color = new THREE.Color().setHSL(
-        (hsl.h + hueOffset) % 1,
-        hsl.s,
-        hsl.l
-      );
-      colors[i * 3] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
+      const starColor = new THREE.Color().setHSL(0, 0, 0.7 + Math.random() * 0.3);
+      colors[i * 3] = starColor.r;
+      colors[i * 3 + 1] = starColor.g;
+      colors[i * 3 + 2] = starColor.b;
       
-      // Size variation
-      sizes[i] = 0.15 + Math.random() * 0.15;
+      sizes[i] = Math.random() * 0.08 + 0.02;
     }
     
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -103,111 +122,63 @@ export class OrbsMode extends BaseMode {
       sizeAttenuation: true,
     });
     
-    this.orbs = new THREE.Points(geometry, material);
-    this.scene.add(this.orbs);
+    this.particles = new THREE.Points(geometry, material);
+    this.scene.add(this.particles);
     
-    // Create trails
-    const trailGeometry = new THREE.BufferGeometry();
-    const trailPositions = new Float32Array(count * this.trailLength * 3);
-    const trailColors = new Float32Array(count * this.trailLength * 3);
-    
-    trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-    trailGeometry.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
-    
-    const trailMaterial = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.5,
-      blending: THREE.AdditiveBlending,
-    });
-    
-    this.trails = new THREE.LineSegments(trailGeometry, trailMaterial);
-    this.scene.add(this.trails);
+    this.scrollOffset = 0;
   }
   
   update(time: number, deltaTime: number): void {
-    if (!this.orbs || !this.trails) return;
+    if (!this.particles) return;
     
-    const positions = this.orbs.geometry.attributes.position.array as Float32Array;
-    const trailPositions = this.trails.geometry.attributes.position.array as Float32Array;
-    const trailColors = this.trails.geometry.attributes.color.array as Float32Array;
-    const colors = this.orbs.geometry.attributes.color.array as Float32Array;
-    const speed = this.config.speed * 0.1 * this.config.intensity;
+    const positions = this.particles.geometry.attributes.position.array as Float32Array;
+    const colors = this.particles.geometry.attributes.color.array as Float32Array;
     
-    for (let i = 0; i < this.orbData.length; i++) {
-      const data = this.orbData[i];
+    // Scroll speed (crawling into distance)
+    const scrollSpeed = this.config.speed * 10 * this.config.intensity;
+    this.scrollOffset += scrollSpeed * deltaTime;
+    
+    const baseColor = new THREE.Color(this.config.color);
+    
+    // Update all particles
+    for (let i = 0; i < positions.length / 3; i++) {
+      // Move particles backward (into the distance)
+      positions[i * 3 + 2] -= scrollSpeed * deltaTime;
       
-      // Update phases (Lissajous curves)
-      data.phaseX += data.speedX * speed;
-      data.phaseY += data.speedY * speed;
-      data.phaseZ += data.speedZ * speed;
+      // Fade based on distance
+      const distance = Math.abs(positions[i * 3 + 2]);
+      let alpha = 1;
       
-      // Calculate position using 3D Lissajous curve
-      const x = Math.sin(data.phaseX) * data.radius;
-      const y = Math.cos(data.phaseY) * data.radius;
-      const z = Math.sin(data.phaseZ) * Math.cos(data.phaseX) * data.radius;
-      
-      const currentPos = new THREE.Vector3(x, y, z);
-      
-      // Update position
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      
-      // Update trail
-      data.trailPositions.unshift(currentPos.clone());
-      if (data.trailPositions.length > this.trailLength) {
-        data.trailPositions.pop();
+      if (distance > 100) {
+        // Reset particle to front when too far
+        positions[i * 3 + 2] += 200;
       }
       
-      // Draw trail
-      for (let t = 0; t < data.trailPositions.length - 1; t++) {
-        const idx = (i * this.trailLength + t) * 3;
-        const p1 = data.trailPositions[t];
-        const p2 = data.trailPositions[t + 1];
-        
-        trailPositions[idx] = p1.x;
-        trailPositions[idx + 1] = p1.y;
-        trailPositions[idx + 2] = p1.z;
-        
-        // Fade trail
-        const alpha = 1 - (t / this.trailLength);
-        trailColors[idx] = colors[i * 3] * alpha;
-        trailColors[idx + 1] = colors[i * 3 + 1] * alpha;
-        trailColors[idx + 2] = colors[i * 3 + 2] * alpha;
+      // Calculate fade based on distance
+      if (distance > 50) {
+        alpha = Math.max(0, 1 - (distance - 50) / 50);
+      } else if (distance < 10) {
+        alpha = distance / 10; // Fade in when approaching
       }
+      
+      colors[i * 3] = baseColor.r * alpha;
+      colors[i * 3 + 1] = baseColor.g * alpha;
+      colors[i * 3 + 2] = baseColor.b * alpha;
     }
     
-    this.orbs.geometry.attributes.position.needsUpdate = true;
-    this.trails.geometry.attributes.position.needsUpdate = true;
-    this.trails.geometry.attributes.color.needsUpdate = true;
-    
-    // Gentle rotation
-    if (this.orbs) {
-      this.orbs.rotation.y += deltaTime * 0.05;
-    }
+    this.particles.geometry.attributes.position.needsUpdate = true;
+    this.particles.geometry.attributes.color.needsUpdate = true;
   }
   
   destroy(): void {
-    if (this.orbs) {
-      this.orbs.geometry.dispose();
-      if (this.orbs.material instanceof THREE.Material) {
-        this.orbs.material.dispose();
+    if (this.particles) {
+      this.particles.geometry.dispose();
+      if (this.particles.material instanceof THREE.Material) {
+        this.particles.material.dispose();
       }
-      this.scene.remove(this.orbs);
-      this.orbs = null;
+      this.scene.remove(this.particles);
+      this.particles = null;
     }
-    
-    if (this.trails) {
-      this.trails.geometry.dispose();
-      if (this.trails.material instanceof THREE.Material) {
-        this.trails.material.dispose();
-      }
-      this.scene.remove(this.trails);
-      this.trails = null;
-    }
-    
-    this.orbData = [];
   }
   
   protected onConfigUpdate(): void {
