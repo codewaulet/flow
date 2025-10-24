@@ -1,296 +1,259 @@
-@import "tailwindcss";
+/**
+ * Global styles for FLOW application
+ */
 
-@layer base {
-  :root {
-    /* CSS Variables для темы */
-    --color-primary: 33 150 243;
-    --color-secondary: 25 118 210;
-    --color-accent: 3 169 244;
-    --color-background: 10 10 10;
-    --color-surface: 26 26 26;
-    --color-text: 255 255 255;
-    --color-text-secondary: 224 224 224;
-    --color-text-tertiary: 176 176 176;
-    
-    /* Glassmorphism переменные */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --glass-blur: 10px;
-    
-    /* Анимации */
-    --transition-fast: 0.15s ease-out;
-    --transition-normal: 0.3s ease-out;
-    --transition-slow: 0.5s ease-out;
-    
-    /* Тени */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05050A;
+  color: rgba(255, 255, 255, 0.95);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Custom scrollbar for settings drawer */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.7);
+}
+
+/* Custom range slider styles */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #a78bfa;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  background: #8b5cf6;
+  transform: scale(1.1);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #a78bfa;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type='range']::-moz-range-thumb:hover {
+  background: #8b5cf6;
+  transform: scale(1.1);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+}
 
-  * {
-    box-sizing: border-box;
+/* Prevent text selection during gestures */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-
-  html {
-    scroll-behavior: smooth;
+  to {
+    opacity: 1;
   }
+}
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: rgb(var(--color-background));
-    color: rgb(var(--color-text));
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Утилиты для glassmorphism */
-  .glass {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-  }
-
-  .glass-light {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Современные кнопки */
-  .btn-modern {
-    padding: 0.5rem 1rem;
-    border-radius: 0.75rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.8;
     transform: scale(1);
   }
-
-  .btn-modern:hover {
+  50% {
+    opacity: 1;
     transform: scale(1.05);
   }
+}
 
-  .btn-modern:active {
-    transform: scale(0.95);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-
-  .btn-modern:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
 
-  .btn-primary {
-    background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)));
-    color: white;
-    box-shadow: 0 4px 15px rgba(var(--color-primary), 0.3);
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
   }
-
-  .btn-secondary {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
 
-  .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
   }
-
-  /* Карточки */
-  .card-modern {
-    border-radius: 1rem;
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
+}
 
-  /* Анимации */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
-
-  @keyframes slideIn {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
+}
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+/* Utility classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.slide-down {
+  animation: slideDown 0.5s ease-out;
+}
+
+.slide-left {
+  animation: slideLeft 0.5s ease-out;
+}
+
+.slide-right {
+  animation: slideRight 0.5s ease-out;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(15, 15, 25, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #a78bfa, #ec4899, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+}
+
+.glow-strong {
+  box-shadow: 0 0 40px rgba(167, 139, 250, 0.7);
+}
+
+/* Focus styles */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+/* Disable outline for mouse users */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  * {
+    border-color: currentColor !important;
   }
+}
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 5px rgba(var(--color-primary), 0.5); }
-    50% { box-shadow: 0 0 20px rgba(var(--color-primary), 0.8); }
-  }
-
-  /* Анимационные классы */
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  .animate-slide-in {
-    animation: slideIn 0.3s ease-out;
-  }
-
-  .animate-pulse {
-    animation: pulse 2s infinite;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite;
-  }
-
-  /* Текст с тенями для читаемости */
-  .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  }
-
-  .text-shadow-lg {
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
-  }
-
-  /* Градиенты */
-  .gradient-primary {
-    background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)));
-  }
-
-  .gradient-accent {
-    background: linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-primary)));
-  }
-
-  .gradient-rainbow {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3);
-    background-size: 300% 300%;
-    animation: gradientShift 3s ease infinite;
-  }
-
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  /* Скроллбар */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-  }
-
-  /* Фокус */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50;
-  }
-
-  /* Адаптивность */
-  @media (max-width: 768px) {
-    .card-modern {
-      padding: 1rem;
-    }
-    
-    .btn-modern {
-      padding: 0.375rem 0.75rem;
-      font-size: 0.875rem;
-    }
-  }
-
-  /* Темная тема по умолчанию */
-  .dark {
-    --color-background: 10 10 10;
-    --color-surface: 26 26 26;
-  }
-
-  .light {
-    --color-background: 255 255 255;
-    --color-surface: 248 248 248;
-    --color-text: 0 0 0;
-    --color-text-secondary: 64 64 64;
-    --color-text-tertiary: 128 128 128;
-  }
-
-  /* Скрытие старых элементов */
-  .old-dropdown,
-  .old-select,
-  .old-border,
-  .old-ui,
-  .legacy-ui {
-    display: none !important;
-  }
-
-  /* Принудительные стили для современного дизайна */
-  .modern-ui {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-  }
-
-  /* Улучшенная читаемость */
-  h1, h2, h3, h4, h5, h6 {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
-    color: rgb(var(--color-text)) !important;
-  }
-
-  p, span, div {
-    color: rgb(var(--color-text-secondary)) !important;
-  }
-
-  /* Glassmorphism для карточек */
-  [class*="card"],
-  [class*="panel"],
-  [class*="modal"] {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  /* Современные кнопки */
-  button {
-    border-radius: 12px !important;
-    transition: all 0.3s ease !important;
-    backdrop-filter: blur(10px) !important;
-  }
-
-  /* Скрытие старых селектов */
-  select,
-  [role="combobox"],
-  [aria-expanded="false"] {
-    display: none !important;
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
   }
 }

@@ -39,3 +39,8 @@ coverage/
 # Misc
 *.tsbuildinfo
 
+# Plans and temporary files
+*.plan.md
+test-*.html
+flower*.html
+
