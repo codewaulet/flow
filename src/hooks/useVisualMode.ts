@@ -5,13 +5,14 @@
 import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { ModeManager } from '../core/visuals/ModeManager';
-import { BreatheMode } from '../core/visuals/modes/BreatheMode';
+import { VortexMode } from '../core/visuals/modes/VortexMode';
+import { TunnelMode } from '../core/visuals/modes/TunnelMode';
 import { StarfieldMode } from '../core/visuals/modes/StarfieldMode';
 import { MatrixMode } from '../core/visuals/modes/MatrixMode';
 import { ToroidMode } from '../core/visuals/modes/ToroidMode';
 import { WeaverMode } from '../core/visuals/modes/WeaverMode';
 import { OrbsMode } from '../core/visuals/modes/OrbsMode';
-import { useAppStore, VisualMode } from '../store/useAppStore';
+import { useAppStore, VisualMode, CameraView } from '../store/useAppStore';
 
 export const useVisualMode = (
   _canvas: HTMLCanvasElement | null,
@@ -26,6 +27,7 @@ export const useVisualMode = (
   const currentMode = useAppStore(state => state.currentMode);
   const isPaused = useAppStore(state => state.isPaused);
   const modeConfig = useAppStore(state => state.modeConfig);
+  const cameraView = useAppStore(state => state.cameraView);
   const setCurrentMode = useAppStore(state => state.setCurrentMode);
   const setTransitioning = useAppStore(state => state.setTransitioning);
   
@@ -36,7 +38,8 @@ export const useVisualMode = (
     const modeManager = new ModeManager(scene, camera, renderer);
     
     // Register all modes
-    modeManager.registerMode(new BreatheMode(scene, camera, renderer));
+    modeManager.registerMode(new VortexMode(scene, camera, renderer));
+    modeManager.registerMode(new TunnelMode(scene, camera, renderer));
     modeManager.registerMode(new ToroidMode(scene, camera, renderer));
     modeManager.registerMode(new WeaverMode(scene, camera, renderer));
     modeManager.registerMode(new StarfieldMode(scene, camera, renderer));
@@ -69,6 +72,40 @@ export const useVisualMode = (
       modeManagerRef.current.updateConfig(modeConfig[currentMode]);
     }
   }, [modeConfig, currentMode]);
+  
+  // Handle camera view changes and reset camera on mode switch
+  useEffect(() => {
+    if (!camera || !(camera instanceof THREE.PerspectiveCamera)) return;
+    
+    const cameraPositions: Record<CameraView, { x: number; y: number; z: number }> = {
+      side: { x: 0, y: 0, z: 20 },
+      top: { x: 0, y: 20, z: 0 },
+      front: { x: 20, y: 0, z: 0 },
+      iso: { x: 15, y: 15, z: 15 }
+    };
+    
+    const targetPos = cameraPositions[cameraView];
+    const startPos = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+    const startTime = Date.now();
+    const duration = 1000;
+    
+    const animateCamera = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      camera.position.x = startPos.x + (targetPos.x - startPos.x) * easeProgress;
+      camera.position.y = startPos.y + (targetPos.y - startPos.y) * easeProgress;
+      camera.position.z = startPos.z + (targetPos.z - startPos.z) * easeProgress;
+      camera.lookAt(0, 0, 0);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateCamera);
+      }
+    };
+    
+    animateCamera();
+  }, [cameraView, camera, currentMode]);
   
   // Apply quality-based optimizations
   const qualityLevel = useAppStore(state => state.qualityLevel);

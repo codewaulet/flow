@@ -49,7 +49,7 @@ export class MatrixMode extends BaseMode {
     this.canvas.style.left = '0';
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
-    this.canvas.style.zIndex = '1';
+    this.canvas.style.zIndex = '0';
     
     // Add canvas to DOM for full screen rendering
     document.body.appendChild(this.canvas);

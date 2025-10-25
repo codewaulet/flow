@@ -9,7 +9,8 @@ import { colors, spacing, glassmorphism } from '../theme/tokens';
 import { isMobile } from '../../utils/device';
 
 const modes: { id: VisualMode; name: string; icon: string }[] = [
-  { id: 'breathe', name: 'Черная дыра', icon: '🕳️' },
+  { id: 'vortex', name: 'Водоворот', icon: '🌊' },
+  { id: 'tunnel', name: 'Туннель', icon: '🌀' },
   { id: 'toroid', name: 'Тороид', icon: '⭕' },
   { id: 'weaver', name: 'Паутина', icon: '🕸️' },
   { id: 'starfield', name: 'Звездное поле', icon: '✨' },

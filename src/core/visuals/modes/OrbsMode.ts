@@ -1,17 +1,19 @@
 /**
- * Crawl Mode - Star Wars style text crawl into perspective
+ * Crawl Mode - Star Wars style text crawl with animated particles
  */
 
 import * as THREE from 'three';
 import { BaseMode, ModeMetadata } from '../BaseMode';
 
-export class OrbsMode extends BaseMode {
+export class CrawlMode extends BaseMode {
   private particles: THREE.Points | null = null;
-  private scrollOffset: number = 0;
+  private textLines: { particles: number[]; lineIndex: number }[] = [];
+  private stars: number[] = [];
+  
   private lines: string[] = [
     'A long time ago in a galaxy far, far away...',
     '',
-    'Enter the FLOW state',
+    'ENTER THE FLOW STATE',
     '',
     'Where focus meets infinity',
     'And creativity knows no bounds',
@@ -24,9 +26,9 @@ export class OrbsMode extends BaseMode {
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
-      id: 'orbs',
+      id: 'crawl',
       name: 'Crawl',
-      description: 'Hypnotic text crawl into the void',
+      description: 'Star Wars style text crawl into infinity',
       icon: '⭐',
       defaultConfig: {
         speed: 0.3,
@@ -39,11 +41,11 @@ export class OrbsMode extends BaseMode {
   }
   
   async init(): Promise<void> {
-    // Setup camera with perspective for crawl effect
+    // Setup camera for crawl perspective
     if (this.camera instanceof THREE.PerspectiveCamera) {
-      this.camera.position.set(0, -15, 20);
-      this.camera.lookAt(0, 0, -50);
-      this.camera.rotation.x = -0.4; // Tilt for perspective
+      this.camera.position.set(0, -5, 5);
+      this.camera.lookAt(0, 10, 0);
+      this.camera.rotation.x = Math.PI / 4; // 45 degree angle for crawl effect
     }
     
     const count = this.config.particleCount;
@@ -54,59 +56,70 @@ export class OrbsMode extends BaseMode {
     
     const baseColor = new THREE.Color(this.config.color);
     
-    // Generate text as particles
     let particleIndex = 0;
-    const spacing = 0.3;
-    const lineHeight = 2;
+    const charSpacing = 0.6;
+    const lineSpacing = 1.5;
     
+    // Create text lines from particles
     for (let lineIdx = 0; lineIdx < this.lines.length && particleIndex < count; lineIdx++) {
       const line = this.lines[lineIdx];
-      const yPos = -lineIdx * lineHeight;
+      const lineParticles: number[] = [];
       
-      // Center the text
-      const startX = -(line.length * spacing) / 2;
+      const startX = -(line.length * charSpacing) / 2;
+      const baseY = lineIdx * lineSpacing;
       
       for (let charIdx = 0; charIdx < line.length && particleIndex < count; charIdx++) {
         const char = line[charIdx];
         
         if (char !== ' ') {
-          // Create particles in a grid pattern for each character
-          const particlesPerChar = 8;
+          // Each character is made of multiple particles
+          const particlesPerChar = 15;
+          const gridSize = 4;
+          
           for (let p = 0; p < particlesPerChar && particleIndex < count; p++) {
-            const xOffset = (Math.random() - 0.5) * spacing * 0.8;
-            const yOffset = (Math.random() - 0.5) * lineHeight * 0.4;
+            const gridX = (p % gridSize) - gridSize / 2;
+            const gridY = Math.floor(p / gridSize) - gridSize / 2;
             
-            positions[particleIndex * 3] = startX + charIdx * spacing + xOffset;
-            positions[particleIndex * 3 + 1] = yPos + yOffset;
-            positions[particleIndex * 3 + 2] = -lineIdx * 5; // Depth
+            const x = startX + charIdx * charSpacing + gridX * 0.1;
+            const y = baseY + gridY * 0.1;
+            const z = -Math.random() * 0.5; // Slight depth variation
             
-            // Color with slight variation
-            const brightness = 0.9 + Math.random() * 0.1;
-            colors[particleIndex * 3] = baseColor.r * brightness;
-            colors[particleIndex * 3 + 1] = baseColor.g * brightness;
-            colors[particleIndex * 3 + 2] = baseColor.b * brightness;
+            positions[particleIndex * 3] = x;
+            positions[particleIndex * 3 + 1] = y;
+            positions[particleIndex * 3 + 2] = z;
             
-            // Size variation
+            colors[particleIndex * 3] = baseColor.r;
+            colors[particleIndex * 3 + 1] = baseColor.g;
+            colors[particleIndex * 3 + 2] = baseColor.b;
+            
             sizes[particleIndex] = 0.15 + Math.random() * 0.1;
             
+            lineParticles.push(particleIndex);
             particleIndex++;
           }
         }
       }
+      
+      if (lineParticles.length > 0) {
+        this.textLines.push({ particles: lineParticles, lineIndex: lineIdx });
+      }
     }
     
-    // Fill remaining particles with stars
+    // Fill remaining with background stars
+    this.stars = [];
     for (let i = particleIndex; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 200;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 200 - 100;
+      positions[i * 3] = (Math.random() - 0.5) * 50;
+      positions[i * 3 + 1] = Math.random() * 100;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 20 - 10;
       
-      const starColor = new THREE.Color().setHSL(0, 0, 0.7 + Math.random() * 0.3);
-      colors[i * 3] = starColor.r;
-      colors[i * 3 + 1] = starColor.g;
-      colors[i * 3 + 2] = starColor.b;
+      const starBrightness = 0.2 + Math.random() * 0.5;
+      colors[i * 3] = starBrightness;
+      colors[i * 3 + 1] = starBrightness;
+      colors[i * 3 + 2] = starBrightness;
       
-      sizes[i] = Math.random() * 0.08 + 0.02;
+      sizes[i] = Math.random() * 0.15 + 0.05;
+      
+      this.stars.push(i);
     }
     
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -117,15 +130,14 @@ export class OrbsMode extends BaseMode {
       size: 0.2,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       blending: THREE.AdditiveBlending,
       sizeAttenuation: true,
+      depthTest: false,
     });
     
     this.particles = new THREE.Points(geometry, material);
     this.scene.add(this.particles);
-    
-    this.scrollOffset = 0;
   }
   
   update(_time: number, deltaTime: number): void {
@@ -133,41 +145,79 @@ export class OrbsMode extends BaseMode {
     
     const positions = this.particles.geometry.attributes.position.array as Float32Array;
     const colors = this.particles.geometry.attributes.color.array as Float32Array;
-    
-    // Scroll speed (crawling into distance)
-    const scrollSpeed = this.config.speed * 10 * this.config.intensity;
-    this.scrollOffset += scrollSpeed * deltaTime;
-    
+    const sizes = this.particles.geometry.attributes.size.array as Float32Array;
     const baseColor = new THREE.Color(this.config.color);
     
-    // Update all particles
-    for (let i = 0; i < positions.length / 3; i++) {
-      // Move particles backward (into the distance)
-      positions[i * 3 + 2] -= scrollSpeed * deltaTime;
+    const speed = this.config.speed * this.config.intensity * 8;
+    
+    // Animate text particles crawling upward (Star Wars style)
+    for (const line of this.textLines) {
+      for (const particleIdx of line.particles) {
+        const idx = particleIdx * 3;
+        
+        // Move upward
+        positions[idx + 1] += speed * deltaTime;
+        
+        // Wrap around when too far
+        if (positions[idx + 1] > 40) {
+          positions[idx + 1] = 0;
+        }
+        
+        const y = positions[idx + 1];
+        
+        // Calculate distance-based scale and fade
+        const distanceFactor = y / 40; // 0 at bottom, 1 at top
+        
+        // Size increases with distance (perspective)
+        sizes[particleIdx] = (0.15 + distanceFactor * 0.3) * (1 + this.config.intensity * 0.5);
+        
+        // Fade in at bottom, fade out at top
+        let alpha = 1;
+        if (y < 2) {
+          alpha = y / 2; // Fade in
+        } else if (y > 30) {
+          alpha = Math.max(0, 1 - (y - 30) / 10); // Fade out
+        }
+        
+        // Apply color with alpha
+        colors[idx] = baseColor.r * alpha;
+        colors[idx + 1] = baseColor.g * alpha;
+        colors[idx + 2] = baseColor.b * alpha;
+      }
+    }
+    
+    // Animate background stars (slower)
+    for (const starIdx of this.stars) {
+      const idx = starIdx * 3;
       
-      // Fade based on distance
-      const distance = Math.abs(positions[i * 3 + 2]);
+      positions[idx + 1] += speed * deltaTime * 0.3;
+      
+      // Wrap around
+      if (positions[idx + 1] > 50) {
+        positions[idx + 1] = 0;
+        positions[idx] = (Math.random() - 0.5) * 50;
+        positions[idx + 2] = (Math.random() - 0.5) * 20 - 10;
+      }
+      
+      const y = positions[idx + 1];
+      
+      // Fade stars
       let alpha = 1;
-      
-      if (distance > 100) {
-        // Reset particle to front when too far
-        positions[i * 3 + 2] += 200;
+      if (y < 5) {
+        alpha = y / 5;
+      } else if (y > 40) {
+        alpha = Math.max(0, 1 - (y - 40) / 10);
       }
       
-      // Calculate fade based on distance
-      if (distance > 50) {
-        alpha = Math.max(0, 1 - (distance - 50) / 50);
-      } else if (distance < 10) {
-        alpha = distance / 10; // Fade in when approaching
-      }
-      
-      colors[i * 3] = baseColor.r * alpha;
-      colors[i * 3 + 1] = baseColor.g * alpha;
-      colors[i * 3 + 2] = baseColor.b * alpha;
+      const starBrightness = (0.2 + Math.random() * 0.3) * alpha;
+      colors[idx] = starBrightness;
+      colors[idx + 1] = starBrightness;
+      colors[idx + 2] = starBrightness;
     }
     
     this.particles.geometry.attributes.position.needsUpdate = true;
     this.particles.geometry.attributes.color.needsUpdate = true;
+    this.particles.geometry.attributes.size.needsUpdate = true;
   }
   
   destroy(): void {
@@ -179,10 +229,15 @@ export class OrbsMode extends BaseMode {
       this.scene.remove(this.particles);
       this.particles = null;
     }
+    this.textLines = [];
+    this.stars = [];
   }
   
   protected onConfigUpdate(): void {
-    // Speed and intensity are used directly in update
+    // Speed and intensity are handled in update loop
+    if (this.particles) {
+      const material = this.particles.material as THREE.PointsMaterial;
+      material.color = new THREE.Color(this.config.color);
+    }
   }
 }
-

@@ -47,29 +47,30 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 30px;
-            padding: 30px;
-            max-width: 1400px;
+            gap: 20px;
+            padding: 20px;
+            padding-bottom: 60px; /* Отступ для фиксированных контролов снизу */
+            max-width: 1200px;
             margin: 0 auto;
             min-height: calc(100vh - 200px);
         }
 
         .variant {
             position: relative;
-            border: 2px solid rgba(255, 107, 53, 0.3);
-            border-radius: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
             aspect-ratio: 1;
         }
 
         .variant:hover {
-            border-color: rgba(255, 107, 53, 0.6);
-            box-shadow: 0 12px 40px rgba(255, 107, 53, 0.2);
-            transform: translateY(-5px);
+            border-color: rgba(255, 107, 53, 0.3);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.15);
+            transform: translateY(-2px);
         }
 
         .variant canvas {
@@ -81,141 +82,199 @@
 
         .variant-label {
             position: absolute;
-            bottom: 15px;
-            left: 15px;
-            background: linear-gradient(135deg, rgba(255, 107, 53, 0.9), rgba(247, 147, 30, 0.9));
+            bottom: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.95), rgba(247, 147, 30, 0.95));
             color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
         .variant-description {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.8);
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.85);
             color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 13px;
-            max-width: 180px;
-            line-height: 1.4;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            max-width: 160px;
+            line-height: 1.3;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .controls {
-            grid-column: 1 / -1;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 40px;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            margin: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            gap: 20px;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
         }
 
         .control-group {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 15px;
-            min-width: 150px;
+            gap: 8px;
+            min-width: auto;
         }
 
         .control-group label {
-            font-size: 16px;
+            font-size: 11px;
             font-weight: 600;
-            color: #ff6b35;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            min-width: 45px;
         }
 
         .control-group input[type="range"] {
-            width: 150px;
-            height: 6px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 3px;
+            width: 80px;
+            height: 3px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 2px;
             outline: none;
             -webkit-appearance: none;
+            appearance: none;
         }
 
         .control-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 12px;
+            height: 12px;
             background: linear-gradient(45deg, #ff6b35, #f7931e);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.4);
+            box-shadow: 0 1px 4px rgba(255, 107, 53, 0.3);
+            transition: all 0.15s ease;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(255, 107, 53, 0.4);
         }
 
         .control-group input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 12px;
+            height: 12px;
             background: linear-gradient(45deg, #ff6b35, #f7931e);
             border-radius: 50%;
             cursor: pointer;
             border: none;
-            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.4);
+            box-shadow: 0 1px 4px rgba(255, 107, 53, 0.3);
         }
 
         .control-value {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 600;
             color: #333;
-            background: rgba(255, 107, 53, 0.1);
-            padding: 5px 10px;
-            border-radius: 5px;
-            min-width: 40px;
+            background: rgba(255, 107, 53, 0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+            min-width: 25px;
             text-align: center;
+            border: 1px solid rgba(255, 107, 53, 0.1);
         }
 
         .color-picker-container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .color-picker {
-            width: 60px;
-            height: 60px;
-            border: 3px solid rgba(0, 0, 0, 0.2);
-            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .color-picker:hover {
             border-color: rgba(255, 107, 53, 0.6);
-            transform: scale(1.1);
+            transform: scale(1.05);
+            box-shadow: 0 2px 6px rgba(255, 107, 53, 0.2);
         }
 
         .color-presets {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 3px;
+            flex-wrap: nowrap;
             justify-content: center;
         }
 
         .color-preset {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
             cursor: pointer;
-            border: 2px solid rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            transition: all 0.1s ease;
         }
 
         .color-preset:hover {
             transform: scale(1.2);
             border-color: #ff6b35;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        .camera-controls {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .camera-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .camera-btn:hover {
+            border-color: rgba(255, 107, 53, 0.6);
+            background: rgba(255, 107, 53, 0.08);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+        }
+
+        .camera-btn.active {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.15);
+            color: #ff6b35;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+        }
+
+        .camera-btn.active:hover {
+            background: rgba(255, 107, 53, 0.25);
         }
 
         .instructions {
@@ -267,28 +326,87 @@
             .container {
                 grid-template-columns: 1fr;
                 grid-template-rows: repeat(4, 1fr);
-                gap: 20px;
-                padding: 20px;
+                gap: 15px;
+                padding: 15px;
+                padding-bottom: 80px;
             }
             
             .controls {
-                flex-direction: column;
-                gap: 20px;
+                flex-direction: row;
+                gap: 10px;
+                padding: 6px 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .control-group {
+                min-width: auto;
+                gap: 4px;
+            }
+            
+            .control-group label {
+                font-size: 9px;
+                min-width: 35px;
+            }
+            
+            .control-group input[type="range"] {
+                width: 60px;
+                height: 2px;
+            }
+            
+            .control-group input[type="range"]::-webkit-slider-thumb {
+                width: 10px;
+                height: 10px;
+            }
+            
+            .control-group input[type="range"]::-moz-range-thumb {
+                width: 10px;
+                height: 10px;
+            }
+            
+            .control-value {
+                font-size: 9px;
+                padding: 1px 4px;
+                min-width: 20px;
+            }
+            
+            .color-picker {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .color-preset {
+                width: 14px;
+                height: 14px;
+            }
+            
+            .camera-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 10px;
+            }
+            
+            .variant-label {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+            
+            .variant-description {
+                font-size: 10px;
+                padding: 4px 6px;
+                max-width: 120px;
             }
             
             .instructions {
                 position: relative;
-                margin: 20px;
+                margin: 15px;
                 max-width: none;
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌌 Прототип черной дыры</h1>
-        <p>Выберите понравившийся вариант анимации</p>
-    </div>
 
     <div class="instructions" id="instructions">
         <button class="close-btn" onclick="document.getElementById('instructions').style.display='none'">×</button>
@@ -304,6 +422,12 @@
             <canvas id="canvas1"></canvas>
             <div class="variant-label">Вариант 1: Плавный водоворот</div>
             <div class="variant-description">Органичная спиральная форма с плавным вращением и эффектом засасывания</div>
+            <div class="camera-controls">
+                <button class="camera-btn active" data-view="side" title="Вид сбоку">📐</button>
+                <button class="camera-btn" data-view="top" title="Вид сверху">🔽</button>
+                <button class="camera-btn" data-view="front" title="Вид спереди">👁️</button>
+                <button class="camera-btn" data-view="iso" title="Изометрический вид">📊</button>
+            </div>
         </div>
 
         <!-- Вариант 2: Геометрический туннель -->
@@ -311,6 +435,12 @@
             <canvas id="canvas2"></canvas>
             <div class="variant-label">Вариант 2: Геометрический туннель</div>
             <div class="variant-description">Концентрические кольца с вращением в разные стороны и пульсирующим эффектом</div>
+            <div class="camera-controls">
+                <button class="camera-btn active" data-view="side" title="Вид сбоку">📐</button>
+                <button class="camera-btn" data-view="top" title="Вид сверху">🔽</button>
+                <button class="camera-btn" data-view="front" title="Вид спереди">👁️</button>
+                <button class="camera-btn" data-view="iso" title="Изометрический вид">📊</button>
+            </div>
         </div>
 
         <!-- Вариант 3: Энергетический вихрь -->
@@ -318,6 +448,12 @@
             <canvas id="canvas3"></canvas>
             <div class="variant-label">Вариант 3: Энергетический вихрь</div>
             <div class="variant-description">Спиральные энергетические потоки с ярким свечением в центре</div>
+            <div class="camera-controls">
+                <button class="camera-btn active" data-view="side" title="Вид сбоку">📐</button>
+                <button class="camera-btn" data-view="top" title="Вид сверху">🔽</button>
+                <button class="camera-btn" data-view="front" title="Вид спереди">👁️</button>
+                <button class="camera-btn" data-view="iso" title="Изометрический вид">📊</button>
+            </div>
         </div>
 
         <!-- Вариант 4: Органическая воронка -->
@@ -325,6 +461,12 @@
             <canvas id="canvas4"></canvas>
             <div class="variant-label">Вариант 4: Органическая воронка</div>
             <div class="variant-description">Мягкие, текучие формы с эффектом жидкости и реалистичным искажением</div>
+            <div class="camera-controls">
+                <button class="camera-btn active" data-view="side" title="Вид сбоку">📐</button>
+                <button class="camera-btn" data-view="top" title="Вид сверху">🔽</button>
+                <button class="camera-btn" data-view="front" title="Вид спереди">👁️</button>
+                <button class="camera-btn" data-view="iso" title="Изометрический вид">📊</button>
+            </div>
         </div>
     </div>
 
@@ -371,6 +513,17 @@
             color: '#ff6b35'
         };
 
+        // Позиции камеры для разных видов
+        const cameraPositions = {
+            side: { x: 0, y: 0, z: 20 },
+            top: { x: 0, y: 20, z: 0 },
+            front: { x: 20, y: 0, z: 0 },
+            iso: { x: 15, y: 15, z: 15 }
+        };
+
+        // Текущие виды камер для каждой сцены
+        let currentViews = ['side', 'side', 'side', 'side'];
+
         // Инициализация
         function init() {
             console.log('Инициализация прототипа...');
@@ -393,7 +546,12 @@
                 const rect = canvas.getBoundingClientRect();
                 renderer.setSize(rect.width, rect.height);
                 renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setClearColor(0x000011, 1);
+                // Темный фон для варианта 3 (частицы), светлый для остальных
+                if (i === 3) {
+                    renderer.setClearColor(0x000000, 1); // Черный фон для частиц
+                } else {
+                    renderer.setClearColor(0x0a0a0a, 1); // Темно-серый для остальных
+                }
 
                 scenes.push(scene);
                 cameras.push(camera);
@@ -401,18 +559,85 @@
             }
 
             // Создаем анимации для каждого варианта
+            console.log('Создание варианта 1...');
             createVariant1();
+            console.log('Создание варианта 2...');
             createVariant2();
+            console.log('Создание варианта 3...');
             createVariant3();
+            console.log('Создание варианта 4...');
             createVariant4();
 
             // Настраиваем контролы
             setupControls();
 
+            // Настраиваем кнопки управления камерой
+            setupCameraControls();
+
             // Запускаем анимацию
             animate();
             
             console.log('Прототип инициализирован!');
+        }
+
+        // Функция для плавного перемещения камеры
+        function animateCamera(cameraIndex, targetPosition, duration = 1000) {
+            const camera = cameras[cameraIndex];
+            const startPosition = {
+                x: camera.position.x,
+                y: camera.position.y,
+                z: camera.position.z
+            };
+            
+            const startTime = Date.now();
+            
+            function updateCamera() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Используем easing функцию для плавности
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                camera.position.x = startPosition.x + (targetPosition.x - startPosition.x) * easeProgress;
+                camera.position.y = startPosition.y + (targetPosition.y - startPosition.y) * easeProgress;
+                camera.position.z = startPosition.z + (targetPosition.z - startPosition.z) * easeProgress;
+                
+                camera.lookAt(0, 0, 0);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCamera);
+                }
+            }
+            
+            updateCamera();
+        }
+
+        // Настройка кнопок управления камерой
+        function setupCameraControls() {
+            for (let i = 1; i <= 4; i++) {
+                const variant = document.getElementById(`variant${i}`);
+                const buttons = variant.querySelectorAll('.camera-btn');
+                
+                buttons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const view = button.getAttribute('data-view');
+                        const cameraIndex = i - 1;
+                        
+                        // Обновляем активную кнопку
+                        buttons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        // Перемещаем камеру
+                        const targetPos = cameraPositions[view];
+                        animateCamera(cameraIndex, targetPos);
+                        
+                        // Сохраняем текущий вид
+                        currentViews[cameraIndex] = view;
+                        
+                        console.log(`Камера ${i} переключена на вид: ${view}`);
+                    });
+                });
+            }
         }
 
         // Вариант 1: Плавный водоворот
@@ -539,16 +764,16 @@
                             float ringGlow = 1.0 - smoothstep(0.0, 0.15, abs(distance - 0.5));
                             
                             // Вращение в разные стороны
-                            float rotation = time * (ringIndex % 2 === 0 ? 1.0 : -1.0) * 2.0;
+                            float rotation = time * (ringIndex < 0.5 ? 1.0 : -1.0) * 2.0;
                             float angle = atan(vUv.y - center.y, vUv.x - center.x) + rotation;
                             float spiralPattern = sin(angle * 8.0) * 0.4 + 0.6;
                             
                             // Добавляем пульсацию
                             float pulse = sin(time * 3.0 + ringIndex * 0.8) * 0.2 + 0.8;
                             
-                            vec3 finalColor = color * spiralPattern * ringGlow * pulse;
+                            vec3 finalColor = color * spiralPattern * ringGlow * pulse * 2.0; // Увеличиваем яркость
                             
-                            gl_FragColor = vec4(finalColor, ringGlow * 0.8);
+                            gl_FragColor = vec4(finalColor, ringGlow * 1.0); // Увеличиваем непрозрачность
                         }
                     `,
                     uniforms: {
@@ -573,13 +798,14 @@
         function createVariant3() {
             const scene = scenes[2];
             
+            console.log('Создание Варианта 3...');
+            
             // Создаем частицы
             const particleCount = 2000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const colors = new Float32Array(particleCount * 3);
             const sizes = new Float32Array(particleCount);
-            const velocities = new Float32Array(particleCount * 3);
 
             for (let i = 0; i < particleCount; i++) {
                 const i3 = i * 3;
@@ -587,38 +813,32 @@
                 // Спиральное расположение частиц
                 const t = i / particleCount;
                 const radius = 12 * (1 - t);
-                const angle = t * Math.PI * 6;
+                const angle = t * Math.PI * 10;
                 const height = (t - 0.5) * 8;
                 
                 positions[i3] = radius * Math.cos(angle);
                 positions[i3 + 1] = radius * Math.sin(angle);
                 positions[i3 + 2] = height;
                 
-                // Цвета на основе температуры
-                const color = new THREE.Color();
-                color.setHSL(0.1 + t * 0.4, 1, 0.5 + t * 0.5);
-                colors[i3] = color.r;
-                colors[i3 + 1] = color.g;
-                colors[i3 + 2] = color.b;
+                // Используем цвет из настроек для всех частиц
+                const baseColor = new THREE.Color(settings.color);
+                // Добавляем вариацию яркости
+                const brightness = 0.5 + t * 1.5;
+                colors[i3] = baseColor.r * brightness;
+                colors[i3 + 1] = baseColor.g * brightness;
+                colors[i3 + 2] = baseColor.b * brightness;
                 
-                sizes[i] = 0.1 + Math.random() * 0.3;
-                
-                // Скорости для анимации
-                velocities[i3] = (Math.random() - 0.5) * 0.1;
-                velocities[i3 + 1] = (Math.random() - 0.5) * 0.1;
-                velocities[i3 + 2] = (Math.random() - 0.5) * 0.05;
+                sizes[i] = 1.0 + Math.random() * 2.0; // Большие частицы
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
 
             const material = new THREE.ShaderMaterial({
                 vertexShader: `
                     attribute float size;
                     attribute vec3 color;
-                    attribute vec3 velocity;
                     uniform float time;
                     
                     varying vec3 vColor;
@@ -626,18 +846,17 @@
                     void main() {
                         vColor = color;
                         
-                        // Анимация частиц
+                        // Спиральное движение частиц
+                        float angle = atan(position.y, position.x) + time * 1.0;
+                        float radius = length(position.xy);
                         vec3 animatedPosition = position;
-                        animatedPosition.xy += velocity.xy * time * 0.5;
-                        animatedPosition.z += velocity.z * time * 0.2;
-                        
-                        // Спиральное движение
-                        float angle = atan(animatedPosition.y, animatedPosition.x) + time * 0.5;
-                        float radius = length(animatedPosition.xy);
                         animatedPosition.xy = vec2(cos(angle), sin(angle)) * radius;
                         
+                        // Добавляем волновую пульсацию по высоте
+                        animatedPosition.z += sin(time * 1.5 + radius * 0.3) * 1.0;
+                        
                         vec4 mvPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
-                        gl_PointSize = size * (300.0 / -mvPosition.z);
+                        gl_PointSize = size * (500.0 / -mvPosition.z); // Большой размер
                         gl_Position = projectionMatrix * mvPosition;
                     }
                 `,
@@ -648,8 +867,10 @@
                         vec2 center = gl_PointCoord - vec2(0.5);
                         float dist = length(center);
                         
-                        float alpha = 1.0 - smoothstep(0.2, 0.5, dist);
-                        gl_FragColor = vec4(vColor, alpha);
+                        // Круглые частицы с мягкими краями
+                        float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                        vec3 brightColor = vColor * 2.5; // Яркие частицы
+                        gl_FragColor = vec4(brightColor, alpha * 0.9);
                     }
                 `,
                 uniforms: {
@@ -664,6 +885,8 @@
             const particles = new THREE.Points(geometry, material);
             scene.add(particles);
             animations.push({ mesh: particles, type: 'particles' });
+            
+            console.log('Вариант 3 создан успешно! Частиц:', particleCount, 'Объект добавлен в сцену:', scene.children.length);
         }
 
         // Вариант 4: Органическая воронка

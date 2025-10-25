@@ -93,7 +93,7 @@ export const Layout: React.FC = () => {
     if (!containerRef.current) return;
     
     // Swipe left/right for mode switching
-    const modes = ['breathe', 'toroid', 'weaver', 'starfield', 'matrix', 'orbs'];
+    const modes = ['vortex', 'tunnel', 'toroid', 'weaver', 'starfield', 'matrix', 'orbs'];
     const currentIndex = modes.indexOf(currentMode);
     
     const handleSwipeLeft = () => {
@@ -138,7 +138,7 @@ export const Layout: React.FC = () => {
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const modes = ['breathe', 'toroid', 'weaver', 'starfield', 'matrix', 'orbs'];
+      const modes = ['vortex', 'tunnel', 'toroid', 'weaver', 'starfield', 'matrix', 'orbs'];
       const currentIndex = modes.indexOf(currentMode);
       
       switch (e.key) {

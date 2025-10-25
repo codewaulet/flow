@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore, CameraView } from '../../store/useAppStore';
 import { colors, spacing, typography } from '../theme/tokens';
 import { isMobile } from '../../utils/device';
 
@@ -24,6 +24,8 @@ export const QuickSettings: React.FC = () => {
   const qualityLevel = useAppStore(state => state.qualityLevel);
   
   const config = modeConfig[currentMode];
+  const cameraView = useAppStore(state => state.cameraView);
+  const setCameraView = useAppStore(state => state.setCameraView);
   const mobile = isMobile();
   
   const handleDragEnd = (_event: any, info: PanInfo) => {
@@ -34,13 +36,21 @@ export const QuickSettings: React.FC = () => {
   };
   
   const modeNames: Record<string, string> = {
-    breathe: 'Черная дыра',
+    vortex: 'Водоворот',
+    tunnel: 'Туннель',
     toroid: 'Тороид',
     weaver: 'Ткач',
     starfield: 'Звездное поле',
     matrix: 'Матрица',
     orbs: 'Ползание',
   };
+  
+  const cameraViews: { id: CameraView; name: string; icon: string }[] = [
+    { id: 'side', name: 'Сбоку', icon: '📐' },
+    { id: 'top', name: 'Сверху', icon: '🔽' },
+    { id: 'front', name: 'Спереди', icon: '👁️' },
+    { id: 'iso', name: 'Изометрия', icon: '📊' },
+  ];
   
   return (
     <AnimatePresence>
@@ -199,13 +209,13 @@ export const QuickSettings: React.FC = () => {
                   color: colors.text.primary,
                   marginBottom: spacing[2],
                 }}>
-                  {currentMode === 'breathe' ? 'Сила черной дыры' : 'Интенсивность'}: <span style={{ color: colors.accent.purple[400] }}>{(config.intensity * 100).toFixed(0)}%</span>
+                  Интенсивность: <span style={{ color: colors.accent.purple[400] }}>{(config.intensity * 100).toFixed(0)}%</span>
                 </label>
                 <input
                   type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
+                  min="0.1"
+                  max="2"
+                  step="0.1"
                   value={config.intensity}
                   onChange={(e) => updateModeConfig(currentMode, { intensity: parseFloat(e.target.value) })}
                   style={{ 
@@ -215,64 +225,68 @@ export const QuickSettings: React.FC = () => {
                 />
               </div>
               
-              {/* Particle Count - with warning for high values */}
-              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.medium,
-                  color: colors.text.primary,
-                  marginBottom: spacing[2],
-                }}>
-                  Частицы: <span style={{ color: colors.accent.purple[400] }}>{config.particleCount}</span>
-                  {config.particleCount > 3000 && (
-                    <span style={{ 
-                      color: colors.text.tertiary, 
-                      fontSize: typography.fontSize.xs,
-                      marginLeft: spacing[2],
-                    }}>
-                      (может влиять на FPS)
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="range"
-                  min="100"
-                  max="5000"
-                  step="100"
-                  value={Math.min(config.particleCount, 5000)}
-                  onChange={(e) => updateModeConfig(currentMode, { particleCount: parseInt(e.target.value) })}
-                  style={{ 
-                    width: '100%',
-                    height: mobile ? '8px' : '4px',
-                  }}
-                />
-              </div>
+              {/* Particle Count - only show for modes that use particles */}
+              {(currentMode !== 'vortex' && currentMode !== 'tunnel') && (
+                <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
+                  <label style={{ 
+                    display: 'block',
+                    fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.medium,
+                    color: colors.text.primary,
+                    marginBottom: spacing[2],
+                  }}>
+                    Частицы: <span style={{ color: colors.accent.purple[400] }}>{config.particleCount}</span>
+                    {config.particleCount > 3000 && (
+                      <span style={{ 
+                        color: colors.text.tertiary, 
+                        fontSize: typography.fontSize.xs,
+                        marginLeft: spacing[2],
+                      }}>
+                        (может влиять на FPS)
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="range"
+                    min="100"
+                    max="5000"
+                    step="100"
+                    value={Math.min(config.particleCount, 5000)}
+                    onChange={(e) => updateModeConfig(currentMode, { particleCount: parseInt(e.target.value) })}
+                    style={{ 
+                      width: '100%',
+                      height: mobile ? '8px' : '4px',
+                    }}
+                  />
+                </div>
+              )}
               
-              {/* Particle Size */}
-              <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
-                  fontWeight: typography.fontWeight.medium,
-                  color: colors.text.primary,
-                  marginBottom: spacing[2],
-                }}>
-                  Размер частиц: <span style={{ color: colors.accent.purple[400] }}>{((config.particleSize || 1.0) * 100).toFixed(0)}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="3"
-                  step="0.1"
-                  value={config.particleSize || 1.0}
-                  onChange={(e) => updateModeConfig(currentMode, { particleSize: parseFloat(e.target.value) })}
-                  style={{ 
-                    width: '100%',
-                    height: mobile ? '8px' : '4px',
-                  }}
-                />
-              </div>
+              {/* Particle Size - only show for modes that use particles */}
+              {(currentMode !== 'vortex' && currentMode !== 'tunnel') && (
+                <div style={{ marginBottom: mobile ? spacing[5] : spacing[4] }}>
+                  <label style={{ 
+                    display: 'block',
+                    fontSize: mobile ? typography.fontSize.base : typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.medium,
+                    color: colors.text.primary,
+                    marginBottom: spacing[2],
+                  }}>
+                    Размер частиц: <span style={{ color: colors.accent.purple[400] }}>{((config.particleSize || 1.0) * 100).toFixed(0)}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="3"
+                    step="0.1"
+                    value={config.particleSize || 1.0}
+                    onChange={(e) => updateModeConfig(currentMode, { particleSize: parseFloat(e.target.value) })}
+                    style={{ 
+                      width: '100%',
+                      height: mobile ? '8px' : '4px',
+                    }}
+                  />
+                </div>
+              )}
               
               {/* Color Picker */}
               <div style={{ marginBottom: spacing[4] }}>
@@ -319,6 +333,48 @@ export const QuickSettings: React.FC = () => {
                       title={color.name}
                     >
                       {config.color === color.value ? '✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Camera View */}
+              <div style={{ marginBottom: spacing[4] }}>
+                <label style={{
+                  display: 'block',
+                  color: colors.text.secondary,
+                  fontSize: typography.fontSize.sm,
+                  marginBottom: spacing[2],
+                }}>
+                  Вид камеры
+                </label>
+                <div style={{
+                  display: 'flex',
+                  gap: spacing[2],
+                  flexWrap: 'wrap',
+                }}>
+                  {cameraViews.map((view) => (
+                    <button
+                      key={view.id}
+                      onClick={() => setCameraView(view.id)}
+                      style={{
+                        padding: mobile ? '0.5rem 0.75rem' : '0.4rem 0.6rem',
+                        borderRadius: '0.5rem',
+                        background: cameraView === view.id ? colors.accent.purple[400] : 'rgba(255, 255, 255, 0.1)',
+                        border: cameraView === view.id ? '2px solid white' : '1px solid rgba(255,255,255,0.2)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        fontSize: mobile ? typography.fontSize.sm : typography.fontSize.xs,
+                        color: 'white',
+                        fontWeight: 'medium',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                      title={view.name}
+                    >
+                      <span>{view.icon}</span>
+                      {!mobile && <span>{view.name}</span>}
                     </button>
                   ))}
                 </div>

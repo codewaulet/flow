@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { AudioPreset } from '../core/audio/types';
 
-export type VisualMode = 'breathe' | 'toroid' | 'weaver' | 'starfield' | 'matrix' | 'orbs';
+export type VisualMode = 'vortex' | 'tunnel' | 'toroid' | 'weaver' | 'starfield' | 'matrix' | 'orbs';
 
 export interface ModeConfig {
   speed: number;
@@ -15,12 +15,15 @@ export interface ModeConfig {
   particleSize?: number; // Optional particle size multiplier
 }
 
+export type CameraView = 'side' | 'top' | 'front' | 'iso';
+
 export interface AppState {
   // Visual state
   currentMode: VisualMode;
   modeConfig: Record<VisualMode, ModeConfig>;
   isPaused: boolean;
   isTransitioning: boolean;
+  cameraView: CameraView;
   
   // Audio state
   audioPreset: AudioPreset;
@@ -51,6 +54,7 @@ export interface AppState {
   updateModeConfig: (mode: VisualMode, config: Partial<ModeConfig>) => void;
   togglePause: () => void;
   setTransitioning: (isTransitioning: boolean) => void;
+  setCameraView: (view: CameraView) => void;
   
   setAudioPreset: (preset: AudioPreset) => void;
   setAudioVolume: (volume: number) => void;
@@ -76,11 +80,18 @@ export interface AppState {
 
 // Default mode configurations (optimized for better FPS)
 const defaultModeConfigs: Record<VisualMode, ModeConfig> = {
-  breathe: {
-    speed: 1.0, // Increased speed
-    intensity: 2.0, // Much stronger black hole
-    particleCount: 5000, // Increased for better black hole effect
-    color: '#8b5cf6',
+  vortex: {
+    speed: 1.0,
+    intensity: 1.0,
+    particleCount: 0,
+    color: '#ff6b35',
+    particleSize: 1.0,
+  },
+  tunnel: {
+    speed: 1.0,
+    intensity: 1.0,
+    particleCount: 0,
+    color: '#ff6b35',
     particleSize: 1.0,
   },
   toroid: {
@@ -117,10 +128,11 @@ const defaultModeConfigs: Record<VisualMode, ModeConfig> = {
 
 export const useAppStore = create<AppState>((set, _get) => ({
   // Initial state
-  currentMode: 'breathe',
+  currentMode: 'vortex',
   modeConfig: defaultModeConfigs,
   isPaused: false,
   isTransitioning: false,
+  cameraView: 'side',
   
   audioPreset: 'none',
   audioVolume: 0.7,
@@ -157,6 +169,8 @@ export const useAppStore = create<AppState>((set, _get) => ({
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
   
   setTransitioning: (isTransitioning) => set({ isTransitioning }),
+  
+  setCameraView: (view) => set({ cameraView: view }),
   
   setAudioPreset: (preset) => set({ audioPreset: preset }),
   
