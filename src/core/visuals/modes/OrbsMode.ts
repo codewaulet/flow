@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { BaseMode, ModeMetadata } from '../BaseMode';
 
-export class CrawlMode extends BaseMode {
+export class OrbsMode extends BaseMode {
   private particles: THREE.Points | null = null;
   private textLines: { particles: number[]; lineIndex: number }[] = [];
   private stars: number[] = [];
@@ -26,7 +26,7 @@ export class CrawlMode extends BaseMode {
   
   constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
     const metadata: ModeMetadata = {
-      id: 'crawl',
+      id: 'orbs',
       name: 'Crawl',
       description: 'Star Wars style text crawl into infinity',
       icon: '⭐',
